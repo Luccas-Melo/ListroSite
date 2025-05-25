@@ -4,7 +4,19 @@ import { useListContext } from '../context/ListContext';
 import { useTheme } from '../context/ThemeContext';
 import ListItem from './ListItem';
 import clsx from 'clsx';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 const ListDetail: React.FC = () => {
   const { getActiveList, addItem, updateList, reorderItems } = useListContext();
@@ -34,7 +46,7 @@ const ListDetail: React.FC = () => {
     { name: 'Plus', icon: <Plus size={24} /> },
   ];
 
-  const getIcon = (type: ListType, iconName?: string) => {
+  const getIcon = (type: string, iconName?: string) => {
     if (type === 'custom' && iconName) {
       const found = predefinedIcons.find((i) => i.name === iconName);
       if (found) return found.icon;
@@ -63,7 +75,7 @@ const ListDetail: React.FC = () => {
     }
   };
 
-  const getTypeColor = (type: ListType) => {
+  const getTypeColor = (type: string) => {
     switch (type) {
       case 'movies':
         return 'bg-blue-100 text-blue-700';
@@ -99,6 +111,24 @@ const ListDetail: React.FC = () => {
     setIsEditing(false);
     setEditTitle(activeList.title);
     setEditIcon(activeList.icon || 'Plus');
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = activeList.items.findIndex(item => item.id === active.id);
+      const newIndex = activeList.items.findIndex(item => item.id === over.id);
+      const newItems = arrayMove(activeList.items, oldIndex, newIndex);
+      reorderItems(activeList.id, newItems);
+    }
   };
 
   return (
@@ -298,28 +328,32 @@ const ListDetail: React.FC = () => {
           </form>
         </div>
 
-        <div className={clsx(
-          viewMode === 'list' ? 'divide-y' : 'grid grid-cols-2 sm:grid-cols-3 gap-4 p-4',
-          theme === 'dark' ? 'divide-gray-700' : 'divide-gray-100'
-        )}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={activeList.items.map(item => item.id)} strategy={verticalListSortingStrategy}>
           {activeList.items.length === 0 ? (
-            <div className={clsx(
-              'p-8 text-center',
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-            )}>
-              Nenhum item ainda. Adicione seu primeiro item acima!
-            </div>
-          ) : (
-            activeList.items.map((item) => (
-              <ListItem 
-                key={item.id} 
-                item={item} 
-                listId={activeList.id} 
-                viewMode={viewMode}
-              />
-            ))
-          )}
-        </div>
+  <div
+    className={clsx(
+      'p-8 text-center',
+      theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+    )}
+  >
+    Nenhum item ainda. Adicione seu primeiro item acima!
+  </div>
+) : viewMode === 'cover' ? (
+  <div className="grid grid-cols-3 gap-4 p-4">
+    {activeList.items.map((item) => (
+      <ListItem key={item.id} item={item} listId={activeList.id} viewMode={viewMode} />
+    ))}
+  </div>
+) : (
+  <div className="divide-y">
+    {activeList.items.map((item) => (
+      <ListItem key={item.id} item={item} listId={activeList.id} viewMode={viewMode} />
+    ))}
+  </div>
+)}
+          </SortableContext>
+        </DndContext>
       </div>
     </div>
   );

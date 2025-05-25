@@ -5,6 +5,8 @@ import { useListContext } from '../context/ListContext';
 import { useTheme } from '../context/ThemeContext';
 import clsx from 'clsx';
 import { Checkbox } from './ui/Checkbox';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ListItemProps {
   item: ListItemType;
@@ -24,6 +26,21 @@ const ListItem: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, 
   const inputRef = useRef<HTMLInputElement>(null);
   const [showAddSubitem, setShowAddSubitem] = useState(false);
   const [newSubitemContent, setNewSubitemContent] = useState('');
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 999 : undefined,
+  };
 
   // Update previewImage if item.coverImage changes, only for level 0
   useEffect(() => {
@@ -102,6 +119,9 @@ const ListItem: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, 
   return (
     <>
       <div
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
         className={clsx(
           'group transition-all duration-200',
           viewMode === 'list' ? [
@@ -126,7 +146,7 @@ const ListItem: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, 
           { 'pl-10': level > 0 },
           { [`pl-${level * 10}`]: level > 0 }
         )}
-        style={{ paddingLeft: `${level * 2.5}rem` }}
+        style={{ ...style, paddingLeft: `${level * 2.5}rem` }}
       >
         {viewMode === 'list' ? (
           <>
@@ -224,7 +244,7 @@ const ListItem: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, 
           </>
         ) : (
           <div className={clsx(
-            "aspect-[2/3] relative",
+            "aspect-[2/3] relative max-w-[150px] max-h-[225px]",
             item.completed ? "" : "bg-gray-100 dark:bg-gray-700"
           )}>
             {previewImage && level === 0 ? (
@@ -237,18 +257,15 @@ const ListItem: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, 
                     item.completed && "opacity-50"
                   )}
                 />
-                {/* Removed the cover image remove button as per user request */}
               </>
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <ImageIcon size={24} className="text-gray-400" />
+                <ImageIcon size={16} className="text-gray-400" />
               </div>
             )}
-            {/* Checkbox na visualização de imagem */}
             <div className="absolute top-2 left-2">
               <Checkbox checked={item.completed} onCheckedChange={handleToggle} />
             </div>
-            {/* Botões de editar e excluir no modo capa para nível 0 */}
             {level === 0 && (
               <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
@@ -270,7 +287,6 @@ const ListItem: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, 
                 </button>
               </div>
             )}
-            {/* Botão de editar imagem no canto inferior direito */}
             {level === 0 && (
               <label className="absolute bottom-2 right-2 p-1 bg-black/50 rounded-lg cursor-pointer" aria-label="Editar capa">
                 <input
@@ -322,7 +338,6 @@ const ListItem: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, 
 
       </div>
 
-      {/* Render subitems as separate divs abaixo do item principal */}
       {item.children && item.children.length > 0 && (
         <div className="ml-10 mt-2 space-y-2">
           {item.children.map((child) => (
