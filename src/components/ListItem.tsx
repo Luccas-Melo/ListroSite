@@ -16,7 +16,7 @@ interface ListItemProps {
   parentItemId?: string;
 }
 
-const ListItem: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, parentItemId }) => {
+const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, parentItemId }) => {
   const { theme } = useTheme();
   const { toggleItem, deleteItem, updateItem, addItem } = useListContext();
   const [isEditing, setIsEditing] = useState(false);
@@ -244,8 +244,8 @@ const ListItem: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, 
           </>
         ) : (
           <div className={clsx(
-            "aspect-[2/3] relative max-w-[150px] max-h-[225px]",
-            item.completed ? "" : "bg-gray-100 dark:bg-gray-700"
+            "relative w-[200px] h-[300px]",
+            item.completed ? "" : ""
           )}>
             {previewImage && level === 0 ? (
               <>
@@ -257,6 +257,11 @@ const ListItem: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, 
                     item.completed && "opacity-50"
                   )}
                 />
+                <div className={clsx(
+                  "absolute bottom-0 left-0 w-full bg-black bg-opacity-60 text-white text-sm p-1 truncate"
+                )}>
+                  {item.content}
+                </div>
               </>
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -356,4 +361,4 @@ const ListItem: React.FC<ListItemProps> = ({ item, listId, viewMode, level = 0, 
   );
 };
 
-export default ListItem;
+export const ListItem = React.memo(ListItemComponent);

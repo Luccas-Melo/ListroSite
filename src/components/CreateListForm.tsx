@@ -93,7 +93,7 @@ const CreateListForm: React.FC = () => {
             />
           </div>
           
-          <div className="mb-6 border-t border-gray-300 dark:border-gray-700 pt-4">
+          {/* <div className="mb-6 border-t border-gray-300 dark:border-gray-700 pt-4">
             <h3 className={clsx(
               'text-lg font-semibold mb-3',
               theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
@@ -125,7 +125,7 @@ const CreateListForm: React.FC = () => {
                 ]
               )}
             />
-          </div>
+          </div> */}
 
           <div className="mb-6">
             <label className={clsx(

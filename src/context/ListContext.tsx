@@ -14,7 +14,8 @@ type Action =
   | { type: 'TOGGLE_FAVORITE'; payload: { id: string } }
   | { type: 'TOGGLE_PINNED'; payload: { id: string } }
   | { type: 'SET_FILTER_TAG'; payload: { tag: string | null } }
-  | { type: 'REORDER_ITEMS'; payload: { listId: string; items: ListItem[] } };
+  | { type: 'REORDER_ITEMS'; payload: { listId: string; items: ListItem[] } }
+  | { type: 'REORDER_LISTS'; payload: { lists: List[] } };
 
 interface ListContextType {
   state: AppState;
@@ -83,6 +84,11 @@ const reducer = (state: AppState, action: Action): AppState => {
         ...state,
         lists: state.lists.filter((list) => list.id !== action.payload.id),
         activeListId: state.activeListId === action.payload.id ? null : state.activeListId,
+      };
+    case 'REORDER_LISTS':
+      return {
+        ...state,
+        lists: action.payload.lists,
       };
 
     case 'SET_ACTIVE_LIST':

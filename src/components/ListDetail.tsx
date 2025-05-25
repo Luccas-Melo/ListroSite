@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Film, Tv, MapPin, PenTool, Book, Plus, Gamepad, Globe, Music, Camera } from 'lucide-react';
 import { useListContext } from '../context/ListContext';
 import { useTheme } from '../context/ThemeContext';
-import ListItem from './ListItem';
+import { ListItem } from './ListItem';
 import clsx from 'clsx';
 import {
   DndContext,
@@ -132,11 +132,11 @@ const ListDetail: React.FC = () => {
   };
 
   return (
-    <div className="flex-grow p-4 md:p-6 max-w-3xl mx-auto">
+    <div className="flex-grow p-0 max-w-[670px] mx-auto">
       <div
         className={clsx(
           'rounded-xl shadow-sm overflow-hidden',
-          theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          theme === 'dark' ? 'bg-gray-800' : 'bg-white shadow-md transition-shadow duration-300'
         )}
       >
         <div
@@ -202,7 +202,7 @@ const ListDetail: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="mb-4">
+                {/* <div className="mb-4">
                   <label className={clsx('block mb-1', theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
                     Avatar / Emoji
                   </label>
@@ -226,9 +226,9 @@ const ListDetail: React.FC = () => {
                       ]
                     )}
                   />
-                </div>
+                </div> */}
 
-                <div className="mb-4">
+                {/* <div className="mb-4">
                   <label className={clsx('block mb-1', theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
                     Tags (separadas por vírgula)
                   </label>
@@ -252,7 +252,7 @@ const ListDetail: React.FC = () => {
                       ]
                     )}
                   />
-                </div>
+                </div> */}
 
                 <div className="mt-4 flex gap-2">
                   <button
