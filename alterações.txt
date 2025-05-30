@@ -1,7 +1,7 @@
 - Exemplo de listas prontas; ✔
 - Itens com prioridade; ✔
-- Cores de listas e todas os componentes da lista;
-- Buscar por filtros na lista;
+- Cores de listas e todas os componentes da lista; ✔
+- Buscar por filtros na lista; ✔
 - Detalhes em cada item;
 - Ordenação dentro das listas;
 - Adicionar toast de confirmação;
