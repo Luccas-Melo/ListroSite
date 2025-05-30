@@ -23,7 +23,7 @@ const MainLayout: React.FC = () => {
         
         <div className="flex flex-1">
           {/* Sidebar for desktop */}
-          <div className={`hidden md:block w-64 flex-shrink-0 ${theme === 'dark' ? 'bg-gray-900/50' : 'bg-white'} border-r ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+          <div className={`hidden md:block flex-shrink-0 ${theme === 'dark' ? 'bg-gray-900/80' : 'bg-white'} border-r ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'} max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-[32rem] w-full transition-width duration-300 ease-in-out`}>
             <Sidebar />
           </div>
 

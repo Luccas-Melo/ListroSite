@@ -15,9 +15,10 @@ interface ListItemProps {
   activeId?: string | number | null;
   level?: number;
   parentItemId?: string;
+  listColor?: string;
 }
 
-const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, activeId, level = 0, parentItemId }) => {
+const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, activeId, level = 0, parentItemId, listColor }) => {
   const { theme } = useTheme();
   const { toggleItem, deleteItem, updateItem, addItem, togglePriorityItem } = useListContext();
   const [isEditing, setIsEditing] = useState(false);
@@ -117,40 +118,40 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
   }, [newSubitemContent, addItem, listId, item.id]);
 
   return (
-    <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      className={clsx(
-        'group transition-all duration-200',
-        viewMode === 'list' ? [
-          'flex items-center p-3 rounded-lg',
-          theme === 'dark' ? [
-            'border border-gray-700 bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
-            item.completed ? 'bg-gray-900/50' : ''
+      <div
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
+        className={clsx(
+          'group transition-all duration-200',
+          viewMode === 'list' ? [
+            'flex items-center p-3 rounded-lg',
+            theme === 'dark' ? [
+              'border border-gray-700 bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
+              item.completed ? 'bg-gray-900/50' : ''
+            ] : [
+              'border border-gray-200 bg-white/80 hover:bg-gray-50 backdrop-blur-md bg-opacity-80',
+              item.completed ? 'bg-gray-50' : ''
+            ]
           ] : [
-            'border border-gray-200 bg-white/80 hover:bg-gray-50 backdrop-blur-md bg-opacity-80',
-            item.completed ? 'bg-gray-50' : ''
-          ]
-        ] : [
-          'group relative rounded-lg overflow-hidden',
-          theme === 'dark' ? [
-            'bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
-            'border border-gray-800/50'
-          ] : [
-            'bg-white hover:bg-gray-50 backdrop-blur-md bg-opacity-80',
-            'border border-gray-200'
-          ]
-        ],
-        { 'pl-10': level > 0 },
-        { [`pl-${level * 10}`]: level > 0 }
-      )}
-      style={{ ...style, paddingLeft: `${level * 2.5}rem` }}
-    >
+            'group relative rounded-lg overflow-hidden',
+            theme === 'dark' ? [
+              'bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
+              'border border-gray-800/50'
+            ] : [
+              'bg-white hover:bg-gray-50 backdrop-blur-md bg-opacity-80',
+              'border border-gray-200'
+            ]
+          ],
+          { 'pl-10': level > 0 },
+          { [`pl-${level * 10}`]: level > 0 }
+        )}
+        style={{ ...style, paddingLeft: `${level * 2.5}rem`, backgroundColor: item.listColor || undefined }}
+      >
       {viewMode === 'list' || isEditing ? (
         <>
           <div className="mr-3 ml-1">
-            <Checkbox checked={item.completed} onCheckedChange={handleToggle} />
+            <Checkbox checked={item.completed} onCheckedChange={handleToggle} color={listColor} />
           </div>
           <span
             className={clsx(
@@ -396,7 +397,7 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
             </div>
           )}
           <div className="absolute top-2 left-2">
-            <Checkbox checked={item.completed} onCheckedChange={handleToggle} />
+            <Checkbox checked={item.completed} onCheckedChange={handleToggle} color={listColor && listColor !== '#84cc16' ? listColor : undefined} />
           </div>
           {level === 0 && (
             <div className="absolute bottom-2 right-2">

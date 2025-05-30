@@ -93,63 +93,66 @@ const SortableItem: React.FC<{
   }, []);
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      onClick={() => setActiveList(list.id)}
-      className={clsx(
-        'relative flex flex-col p-4 pr-4 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md select-none',
-        list.id === activeListId
-          ? theme === 'dark'
-            ? 'bg-brandGreen-600 text-white shadow-lg shadow-brandGreen-600/40 hover:bg-brandGreen-700'
-            : 'bg-brandGreen-600 text-white hover:bg-brandGreen-700'
-          : theme === 'dark'
-            ? 'text-gray-300 border border-gray-700 bg-gray-800/60 hover:bg-gray-800/70 hover:border-gray-600'
-            : 'text-gray-700 border border-gray-200 bg-gray-50 shadow-sm hover:shadow-md hover:bg-gray-100 hover:border-gray-300'
-      )}
-      tabIndex={0}
-      role="button"
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          setActiveList(list.id);
-        }
-      }}
-    >
-      <div className="flex items-center gap-1 overflow-hidden">
-        {!list.pinned && (
-          <span
-            {...attributes}
-            {...listeners}
-            className="mr-2 cursor-grab select-none"
-            aria-label="Arrastar lista"
-            title="Arrastar lista"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
-            </svg>
-          </span>
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        onClick={() => setActiveList(list.id)}
+        className={clsx(
+          'relative flex flex-col p-4 pr-4 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md select-none overflow-hidden z-20',
+          list.id === activeListId
+            ? theme === 'dark'
+              ? 'bg-brandGreen-600 text-white shadow-lg shadow-brandGreen-600/40 hover:bg-brandGreen-600'
+              : 'bg-brandGreen-600 text-white hover:bg-brandGreen-700'
+            : theme === 'dark'
+              ? 'text-gray-300 border border-gray-700 bg-gray-800/30 hover:bg-gray-800/40 hover:border-gray-600'
+              : 'text-gray-700 border border-gray-200 bg-gray-50 shadow-sm hover:shadow-md hover:bg-gray-100 hover:border-gray-300'
         )}
-        {list.avatar && <span className="text-2xl select-none">{list.avatar}</span>}
-        <span>{getIcon(list.icon, list.type)}</span>
-        <span className="text-lg font-semibold break-words line-clamp-2 leading-snug flex-grow">
-          {list.title}
-        </span>
+        tabIndex={0}
+        role="button"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            setActiveList(list.id);
+          }
+        }}
+      >
+        <div className="flex items-center gap-3 overflow-hidden pointer-events-auto min-w-0">
+          {!list.pinned && (
+            <span
+              {...attributes}
+              {...listeners}
+              className="mr-3 cursor-grab select-none z-30 pointer-events-auto flex-shrink-0"
+              aria-label="Arrastar lista"
+              title="Arrastar lista"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="w-5 h-5"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
+              </svg>
+            </span>
+          )}
+          {list.avatar && <span className="text-2xl select-none mr-3 pointer-events-auto flex-shrink-0">{list.avatar}</span>}
+          <span className="mr-3 pointer-events-auto flex-shrink-0">{getIcon(list.icon, list.type)}</span>
+          <span
+            className="text-lg font-semibold truncate leading-snug pointer-events-auto min-w-0"
+            title={list.title}
+          >
+            {list.title}
+          </span>
         <button
           onClick={(e) => {
             e.stopPropagation();
             toggleFavorite(list.id);
           }}
           className={clsx(
-            'p-1 rounded transform transition-transform duration-300',
+            'p-1 rounded transform transition-transform duration-300 pointer-events-auto',
             list.favorite ? 'text-yellow-400' : 'text-gray-400 hover:text-yellow-400',
             isStarAnimating ? 'scale-125' : ''
           )}
@@ -163,13 +166,25 @@ const SortableItem: React.FC<{
             togglePinned(list.id);
           }}
           className={clsx(
-            'p-1 rounded transform transition-transform duration-300',
+            'p-1 rounded transform transition-transform duration-300 pointer-events-auto',
             list.pinned ? 'text-blue-400' : 'text-gray-400 hover:text-blue-400',
             isPinAnimating ? 'scale-125' : ''
           )}
           aria-label="Fixar lista"
         >
           {list.pinned ? <PinFill size={18} fill="currentColor" /> : <Pin size={18} />}
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm('Tem certeza que deseja excluir esta lista?')) {
+              deleteList(list.id);
+            }
+          }}
+          className="p-1 text-gray-400 hover:text-red-500 rounded pointer-events-auto"
+          aria-label="Excluir lista"
+        >
+          <Trash2 size={18} />
         </button>
       </div>
 
@@ -220,7 +235,7 @@ const SortableItem: React.FC<{
       )}
 
       {list.tags && list.tags.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-2 flex flex-wrap gap-3 overflow-visible">
           {list.tags.map((tag: { id: string; name: string }, idx: number) => (
             <span
               key={idx}
@@ -232,15 +247,15 @@ const SortableItem: React.FC<{
         </div>
       )}
 
-      <div className="mt-2 h-2 w-full rounded-full bg-gray-300 dark:bg-gray-700 overflow-visible box-border">
-        <div
+    <div className="mt-2 h-2 w-full rounded-full bg-gray-300 dark:bg-gray-700 overflow-hidden box-border relative">
+      <div
           className={clsx(
-            'h-full rounded-full transition-all duration-500',
-            theme === 'dark' ? 'bg-brandGreen-400' : 'bg-green-300'
+            'h-full rounded-full transition-all duration-500 relative z-10',
+            theme === 'dark' ? 'bg-brandGreen-500' : 'bg-green-400'
           )}
           style={{ width: `${progress}%` }}
         />
-      </div>
+    </div>
     </div>
   );
 });
@@ -252,6 +267,10 @@ const Sidebar: React.FC = () => {
 
   const [starAnimatingId, setStarAnimatingId] = useState<string | null>(null);
   const [pinAnimatingId, setPinAnimatingId] = useState<string | null>(null);
+
+  // New state for filter and sort
+  const [filterText, setFilterText] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const toggleFavorite = useCallback((id: string) => {
     setStarAnimatingId(id);
@@ -265,14 +284,28 @@ const Sidebar: React.FC = () => {
     setTimeout(() => setPinAnimatingId(null), 300);
   }, [dispatch]);
 
-  // Sort lists: pinned first, then others
+  // Filter and sort lists
+  const filteredLists = useMemo(() => {
+    return lists.filter(list => list.title.toLowerCase().includes(filterText.toLowerCase()));
+  }, [lists, filterText]);
+
   const sortedLists = useMemo(() => {
-    return [...lists].sort((a, b) => {
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
-      return 0;
-    });
-  }, [lists]);
+    const pinnedLists = filteredLists.filter(list => list.pinned);
+    const nonPinnedLists = filteredLists.filter(list => !list.pinned);
+
+    const sortFunc = (a: typeof lists[0], b: typeof lists[0]) => {
+      if (sortOrder === 'asc') {
+        return a.title.localeCompare(b.title);
+      } else {
+        return b.title.localeCompare(a.title);
+      }
+    };
+
+    pinnedLists.sort(sortFunc);
+    nonPinnedLists.sort(sortFunc);
+
+    return [...pinnedLists, ...nonPinnedLists];
+  }, [filteredLists, sortOrder]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -316,7 +349,7 @@ const Sidebar: React.FC = () => {
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div
         className={clsx(
-          'h-full p-4 w-64 rounded-lg shadow-lg backdrop-blur',
+          'h-full p-4 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-[56rem] rounded-lg shadow-lg backdrop-blur overflow-auto',
           theme === 'dark'
             ? 'bg-gray-900/50 border border-gray-700 text-gray-100'
             : 'bg-white border border-gray-300 text-gray-900'
@@ -330,6 +363,53 @@ const Sidebar: React.FC = () => {
         >
           Suas Listas
         </h2>
+
+        {/* Filter input */}
+        <input
+          type="text"
+          placeholder="Filtrar por nome..."
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
+          className={clsx(
+            'mb-4 w-full p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-brandGreen-500',
+            theme === 'dark'
+              ? 'bg-gray-800 text-gray-100 border-gray-600 placeholder-gray-400'
+              : 'bg-white text-gray-900 placeholder-gray-500'
+          )}
+        />
+
+        {/* Sort order buttons */}
+        <div className="mb-4 flex gap-2">
+          <button
+            onClick={() => setSortOrder('asc')}
+            className={clsx(
+              'px-3 py-1 rounded border',
+              sortOrder === 'asc'
+                ? 'bg-brandGreen-500 text-white border-brandGreen-500'
+                : 'bg-transparent text-gray-700 border-gray-300 hover:bg-gray-100',
+              theme === 'dark'
+                ? 'text-gray-100 hover:bg-gray-700 border-gray-600'
+                : ''
+            )}
+          >
+            A-Z
+          </button>
+          <button
+            onClick={() => setSortOrder('desc')}
+            className={clsx(
+              'px-3 py-1 rounded border',
+              sortOrder === 'desc'
+                ? 'bg-brandGreen-500 text-white border-brandGreen-500'
+                : 'bg-transparent text-gray-700 border-gray-300 hover:bg-gray-100',
+              theme === 'dark'
+                ? 'text-gray-100 hover:bg-gray-700 border-gray-600'
+                : ''
+            )}
+          >
+            Z-A
+          </button>
+        </div>
+
         <SortableContext items={sortedLists.map((list) => list.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-3">
             {sortedLists.map((list) => (

@@ -4,7 +4,11 @@ import { useListContext } from '../context/ListContext';
 import { useTheme } from '../context/ThemeContext';
 import clsx from 'clsx';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  toggleSidebar: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   const { state, setActiveList } = useListContext();
   const { theme, toggleTheme, viewMode, setViewMode } = useTheme();
 

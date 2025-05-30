@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { List, AppState, Tag, ListItem } from '../types';
 
 type Action =
-  | { type: 'ADD_LIST'; payload: { title: string; type: string; icon?: string; avatar?: string; tags?: Tag[] } }
+  | { type: 'ADD_LIST'; payload: { id?: string; title: string; type: string; icon?: string; avatar?: string; tags?: Tag[]; viewMode?: 'list' | 'cover'; color?: string } }
   | { type: 'DELETE_LIST'; payload: { id: string } }
   | { type: 'SET_ACTIVE_LIST'; payload: { id: string | null } }
   | { type: 'ADD_ITEM'; payload: { listId: string; content: string; coverImage?: string; parentItemId?: string } }
@@ -10,9 +10,10 @@ type Action =
   | { type: 'TOGGLE_ITEM'; payload: { listId: string; itemId: string; parentItemId?: string } }
   | { type: 'UPDATE_ITEM'; payload: { listId: string; itemId: string; content: string; coverImage?: string; parentItemId?: string } }
   | { type: 'TOGGLE_VIEW_MODE'; payload: { listId: string } }
-  | { type: 'UPDATE_LIST'; payload: { id: string; title: string; icon?: string; avatar?: string; tags?: Tag[]; favorite?: boolean; pinned?: boolean } }
+  | { type: 'UPDATE_LIST'; payload: { id: string; title: string; icon?: string; avatar?: string; tags?: Tag[]; favorite?: boolean; pinned?: boolean; color?: string } }
   | { type: 'TOGGLE_FAVORITE'; payload: { id: string } }
   | { type: 'TOGGLE_PINNED'; payload: { id: string } }
+  | { type: 'TOGGLE_PRIORITY_ITEM'; payload: { listId: string; itemId: string } }
   | { type: 'SET_FILTER_TAG'; payload: { tag: string | null } }
   | { type: 'REORDER_ITEMS'; payload: { listId: string; items: ListItem[] } }
   | { type: 'REORDER_LISTS'; payload: { lists: List[] } };
@@ -20,7 +21,8 @@ type Action =
 interface ListContextType {
   state: AppState;
   dispatch: React.Dispatch<Action>;
-  addList: (title: string, type: string) => void;
+  addList: (title: string, type: string, icon?: string, avatar?: string, tags?: Tag[]) => void;
+  addListFromTemplate: (template: { title: string; type: string; icon?: string; tags?: string[]; items: any[] }) => void;
   deleteList: (id: string) => void;
   setActiveList: (id: string | null) => void;
   addItem: (listId: string, content: string, coverImage?: string, parentItemId?: string) => void;
@@ -31,7 +33,8 @@ interface ListContextType {
   toggleViewMode: (listId: string) => void;
   setFilterTag: (tag: string | null) => void;
   getActiveList: () => List | undefined;
-  updateList: (id: string, title: string, icon?: string) => void;
+  updateList: (id: string, title: string, icon?: string, avatar?: string, tags?: Tag[], favorite?: boolean, pinned?: boolean, color?: string) => void;
+  togglePriorityItem: (listId: string, itemId: string) => void;
 }
 
 
@@ -60,18 +63,19 @@ const reducer = (state: AppState, action: Action): AppState => {
   };
 
   switch (action.type) {
-    case 'ADD_LIST':
+  case 'ADD_LIST':
       const newList: List = {
-        id: generateId(),
+        id: action.payload.id || generateId(),
         title: action.payload.title,
         type: action.payload.type,
         icon: action.payload.icon,
         items: [],
         createdAt: Date.now(),
-        viewMode: 'list',
+        viewMode: action.payload.viewMode || 'list',
         favorite: false,
         pinned: false,
         tags: action.payload.tags || [],
+        color: action.payload.color || '#84cc16', // cor padrão verde
       };
       return {
         ...state,
@@ -285,7 +289,7 @@ const reducer = (state: AppState, action: Action): AppState => {
         }),
       };
 
-    case 'UPDATE_LIST':
+  case 'UPDATE_LIST':
       return {
         ...state,
         lists: state.lists.map((list) => {
@@ -298,6 +302,7 @@ const reducer = (state: AppState, action: Action): AppState => {
               tags: action.payload.tags,
               favorite: action.payload.favorite ?? list.favorite,
               pinned: action.payload.pinned ?? list.pinned,
+              color: action.payload.color ?? list.color,
             };
           }
           return list;
@@ -350,6 +355,36 @@ const reducer = (state: AppState, action: Action): AppState => {
           return list;
         }),
       };
+    case 'TOGGLE_PRIORITY_ITEM':
+      const updateNestedItems = (items: ListItem[], itemId: string, callback: (item: ListItem) => ListItem): ListItem[] => {
+        return items.map(item => {
+          if (item.id === itemId) {
+            return callback(item);
+          }
+          if (item.children) {
+            return {
+              ...item,
+              children: updateNestedItems(item.children, itemId, callback),
+            };
+          }
+          return item;
+        });
+      };
+      return {
+        ...state,
+        lists: state.lists.map((list) => {
+          if (list.id === action.payload.listId) {
+            return {
+              ...list,
+              items: updateNestedItems(list.items, action.payload.itemId, (item) => ({
+                ...item,
+                priority: !item.priority,
+              })),
+            };
+          }
+          return list;
+        }),
+      };
     default:
       return state;
   }
@@ -376,9 +411,9 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('listApp', JSON.stringify(state));
   }, [state]);
 
-  const addList = (title: string, type: ListType, icon?: string, avatar?: string, tags?: Tag[]) => {
+  const addList = (title: string, type: string, icon?: string, avatar?: string, tags?: Tag[], color?: string) => {
     // Set default icon based on type if icon not provided
-    const defaultIcons: Record<ListType, string> = {
+    const defaultIcons: Record<string, string> = {
       movies: 'Film',
       shows: 'Tv',
       places: 'MapPin',
@@ -394,14 +429,54 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     dispatch({
       type: 'ADD_LIST',
-      payload: { title, type, icon: iconToUse, avatar, tags },
+      payload: { title, type, icon: iconToUse, avatar, tags, color },
     });
   };
 
-  const updateList = (id: string, title: string, icon?: string, avatar?: string, tags?: Tag[]) => {
+  // New function to add list from template
+  const addListFromTemplate = (template: { title: string; type: string; icon?: string; tags?: string[]; items: any[] }) => {
+    // Create the list first
+    const newListId = generateId();
+    const iconToUse = template.icon || 'Plus';
+
+    dispatch({
+      type: 'ADD_LIST',
+      payload: {
+        id: newListId,
+        title: template.title,
+        type: template.type,
+        icon: iconToUse,
+        viewMode: 'cover',
+        tags: template.tags?.map(tag => ({ id: generateId(), name: tag })) || [],
+      },
+    });
+
+    // Add items to the new list after a short delay to ensure list is created
+    setTimeout(() => {
+      template.items.forEach(item => {
+        dispatch({
+          type: 'ADD_ITEM',
+          payload: {
+            listId: newListId,
+            content: item.content,
+            coverImage: item.coverImage,
+          },
+        });
+      });
+    }, 100);
+  };
+
+  const togglePriorityItem = (listId: string, itemId: string) => {
+    dispatch({
+      type: 'TOGGLE_PRIORITY_ITEM',
+      payload: { listId, itemId },
+    });
+  };
+
+  const updateList = (id: string, title: string, icon?: string, avatar?: string, tags?: Tag[], favorite?: boolean, pinned?: boolean, color?: string) => {
     dispatch({
       type: 'UPDATE_LIST',
-      payload: { id, title, icon, avatar, tags },
+      payload: { id, title, icon, avatar, tags, favorite, pinned, color },
     });
   };
 
@@ -472,6 +547,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
         state,
         dispatch,
         addList,
+        addListFromTemplate,
         deleteList,
         setActiveList,
         addItem,
@@ -483,6 +559,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setFilterTag,
         getActiveList,
         updateList,
+        togglePriorityItem,
       }}
     >
       {children}

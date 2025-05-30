@@ -1,7 +1,12 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-const CheckboxParticles: React.FC = () => {
+interface CheckboxParticlesProps {
+  isChecked: boolean;
+  color?: string;
+}
+
+const CheckboxParticles: React.FC<CheckboxParticlesProps> = ({ isChecked, color }) => {
   const particles = React.useMemo(() => {
     return Array.from({ length: 16 }).map((_, i) => {
       const angle = (Math.PI * 2 * i) / 16;
@@ -12,10 +17,14 @@ const CheckboxParticles: React.FC = () => {
         y: Math.sin(angle) * distance,
         delay: Math.random() * 0.3,
         size: Math.random() * 4 + 2,
-        color: `hsl(${Math.random() * 60 + 90}, 70%, 60%)`,
+          color: color || 'hsl(120, 70%, 60%)',
       };
     });
-  }, []);
+  }, [color]);
+
+  if (!isChecked) {
+    return null;
+  }
 
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -49,8 +58,8 @@ const CheckboxParticles: React.FC = () => {
           width: "100%",
           height: "100%",
           borderRadius: "50%",
-          border: "2px solid hsl(120, 70%, 60%)",
-          boxShadow: "0 0 20px hsl(120, 70%, 60%)",
+          border: `2px solid ${color || 'hsl(120, 70%, 60%)'}`,
+          boxShadow: `0 0 20px ${color || 'hsl(120, 70%, 60%)'}`,
         }}
       />
     </div>

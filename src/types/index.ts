@@ -12,6 +12,8 @@ export interface ListItem {
   completed: boolean;
   createdAt: number;
   children?: ListItem[];
+  priority?: boolean;
+  listColor?: string; // cor personalizada da lista para o item
 }
 
 export interface List {
@@ -26,10 +28,22 @@ export interface List {
   favorite?: boolean;
   pinned?: boolean;
   tags?: Tag[];
+  color?: string; // cor personalizada da lista
 }
 
 export interface AppState {
   lists: List[];
   activeListId: string | null;
   filterTag?: string | null;
+}
+export interface ListType {
+  id: string;
+  title: string;
+  pinned: boolean;
+  favorite?: boolean;
+  items?: { completed: boolean }[];
+  icon?: string;
+  avatar?: string;
+  tags?: { id: string; name: string }[];
+  type?: string;
 }

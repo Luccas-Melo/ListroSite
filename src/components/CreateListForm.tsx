@@ -4,50 +4,44 @@ import { useTheme } from '../context/ThemeContext';
 import { Film, Tv, MapPin, PenTool, Book, X } from 'lucide-react';
 import clsx from 'clsx';
 import { ListType } from '../types';
+import ModalTemplateSelector from './ModalTemplateSelector';
 
 const CreateListForm: React.FC = () => {
-  const { addList } = useListContext();
+  const { addList, addListFromTemplate } = useListContext();
   const { theme } = useTheme();
   const [title, setTitle] = useState('');
-  const [selectedType, setSelectedType] = useState<ListType>('custom');
+  const [selectedType, setSelectedType] = useState<string>('custom');
   const [selectedIcon, setSelectedIcon] = useState<string>('X');
   const [avatar, setAvatar] = useState<string>('');
   const [tags, setTags] = useState<string>('');
+  const [selectedColor, setSelectedColor] = React.useState<string>('#84cc16'); // cor padrão verde
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
-  const listTypes: { type: ListType; icon: React.ReactNode; label: string; color: string }[] = [
-    { type: 'movies', icon: <Film size={20} />, label: 'Filmes', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    { type: 'shows', icon: <Tv size={20} />, label: 'Séries', color: 'bg-green-100 text-green-700 border-green-200' },
-    { type: 'places', icon: <MapPin size={20} />, label: 'Lugares', color: 'bg-brandGreen-100 text-brandGreen-700 border-brandGreen-200' },
-    { type: 'drawings', icon: <PenTool size={20} />, label: 'Desenhos', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-    { type: 'books', icon: <Book size={20} />, label: 'Livros', color: 'bg-rose-100 text-rose-700 border-rose-200' },
-    { type: 'custom', icon: <X size={20} />, label: 'Personalizada', color: 'bg-gray-100 text-gray-700 border-gray-200' },
-  ];
+  const openTemplateModal = () => setIsTemplateModalOpen(true);
+  const closeTemplateModal = () => setIsTemplateModalOpen(false);
 
-  const predefinedIcons: { name: string; icon: React.ReactNode }[] = [
-    { name: 'Film', icon: <Film size={20} /> },
-    { name: 'Tv', icon: <Tv size={20} /> },
-    { name: 'MapPin', icon: <MapPin size={20} /> },
-    { name: 'PenTool', icon: <PenTool size={20} /> },
-    { name: 'Book', icon: <Book size={20} /> },
-    { name: 'X', icon: <X size={20} /> },
-  ];
+  const handleTemplateSelect = (template: any) => {
+    addListFromTemplate(template);
+    closeTemplateModal();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (title.trim()) {
-      // Cast addList to accept 5 arguments
-      (addList as (title: string, type: ListType, icon?: string, avatar?: string, tags?: string[]) => void)(
+      (addList as unknown as (title: string, type: string, icon?: string, avatar?: string, tags?: string[], color?: string) => void)(
         title.trim(),
         selectedType,
         selectedType === 'custom' ? selectedIcon : undefined,
         avatar.trim() || undefined,
-        tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+        tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
+        selectedColor
       );
       setTitle('');
       setSelectedType('custom');
       setSelectedIcon('X');
       setAvatar('');
       setTags('');
+      setSelectedColor('#84cc16');
     }
   };
 
@@ -61,7 +55,26 @@ const CreateListForm: React.FC = () => {
           'text-2xl font-bold mb-6',
           theme === 'dark' ? 'text-gray-100' : 'text-gray-900'
         )}>Criar Nova Lista</h2>
-        
+
+        <button
+          type="button"
+          onClick={openTemplateModal}
+          className={clsx(
+            'mb-4 w-full py-2 px-4 font-medium rounded-md transition-transform duration-150 active:scale-95 focus:outline-none',
+            theme === 'dark' ? [
+              'bg-[#bef264] hover:bg-[#a3e635] text-gray-900',
+              'hover:shadow-lg hover:shadow-[#a3e635]/20',
+              'focus:ring-4 focus:ring-[#a3e635]/50',
+            ] : [
+              'bg-[#bef264] hover:bg-[#a3e635] text-gray-900',
+              'hover:shadow-md',
+              'focus:ring-4 focus:ring-[#a3e635]/50',
+            ]
+          )}
+        >
+          Usar Template de Lista
+        </button>
+
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
             <label htmlFor="title" className={clsx(
@@ -92,40 +105,6 @@ const CreateListForm: React.FC = () => {
               required
             />
           </div>
-          
-          {/* <div className="mb-6 border-t border-gray-300 dark:border-gray-700 pt-4">
-            <h3 className={clsx(
-              'text-lg font-semibold mb-3',
-              theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
-            )}>
-              Personalização
-            </h3>
-            <label className={clsx(
-              'block text-sm font-medium mb-1',
-              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-            )}>
-              Avatar / Emoji
-            </label>
-            <input
-              type="text"
-              value={avatar}
-              onChange={(e) => setAvatar(e.target.value)}
-              placeholder="Ex: 😀, 🚀, 🏆"
-              className={clsx(
-                'w-full px-3 py-2 border-2 rounded-md focus:outline-none transition-all duration-200 placeholder:text-gray-400',
-                theme === 'dark' ? [
-                  'bg-gray-800 border-gray-700 text-gray-100',
-                  'focus:border-[#a3e635]/50 focus:bg-gray-800/90',
-                  'hover:border-[#a3e635]'
-                ] : [
-                  'bg-white border-gray-300 text-gray-900',
-                  'placeholder:text-gray-400',
-                  'focus:border-[#a3e635] focus:ring-2 focus:ring-[#a3e635]/40',
-                  'hover:border-[#a3e635]'
-                ]
-              )}
-            />
-          </div> */}
 
           <div className="mb-6">
             <label className={clsx(
@@ -155,6 +134,22 @@ const CreateListForm: React.FC = () => {
             />
           </div>
 
+          <div className="mb-6">
+            <label className={clsx(
+              'block text-sm font-medium mb-1',
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+            )}>
+              Selecione uma cor personalizada
+            </label>
+            <input
+              type="color"
+              value={selectedColor}
+              onChange={(e) => setSelectedColor(e.target.value)}
+              className="w-16 h-8 rounded border border-gray-300 cursor-pointer"
+              title="Selecionar cor da lista"
+            />
+          </div>
+
           {selectedType === 'custom' && (
             <div className="mb-6">
               <label className={clsx(
@@ -164,7 +159,14 @@ const CreateListForm: React.FC = () => {
                 Selecione um ícone
               </label>
               <div className="grid grid-cols-3 gap-3">
-                {predefinedIcons.map(({ name, icon }) => (
+                {[
+                  { name: 'Film', icon: <Film size={20} /> },
+                  { name: 'Tv', icon: <Tv size={20} /> },
+                  { name: 'MapPin', icon: <MapPin size={20} /> },
+                  { name: 'PenTool', icon: <PenTool size={20} /> },
+                  { name: 'Book', icon: <Book size={20} /> },
+                  { name: 'X', icon: <X size={20} /> },
+                ].map(({ name, icon }) => (
                   <button
                     key={name}
                     type="button"
@@ -191,25 +193,25 @@ const CreateListForm: React.FC = () => {
           <button
             type="submit"
             disabled={!title.trim()}
-              className={clsx(
+            className={clsx(
               'w-full py-2 px-4 font-medium rounded-md transition-transform duration-150 active:scale-95 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed',
               theme === 'dark' ? [
-                'bg-[#bef264] hover:bg-[#a3e635] text-gray-900',
-                'hover:shadow-lg hover:shadow-[#a3e635]/20',
-                'focus:ring-4 focus:ring-[#a3e635]/50',
-                'disabled:hover:bg-[#bef264] disabled:hover:shadow-none'
+                'text-gray-900 hover:shadow-lg',
+                'focus:ring-4',
+                'disabled:hover:shadow-none'
               ] : [
-                'bg-[#bef264] hover:bg-[#a3e635] text-gray-900',
-                'hover:shadow-md',
-                'focus:ring-4 focus:ring-[#a3e635]/50',
-                'disabled:hover:bg-[#bef264] disabled:hover:shadow-none'
+                'text-gray-900 hover:shadow-md',
+                'focus:ring-4',
+                'disabled:hover:shadow-none'
               ]
             )}
+            style={{ backgroundColor: selectedColor }}
           >
             Criar Lista
           </button>
         </form>
       </div>
+      <ModalTemplateSelector isOpen={isTemplateModalOpen} onClose={closeTemplateModal} />
     </div>
   );
 };
