@@ -21,11 +21,22 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { snapCenterToCursor } from '@dnd-kit/modifiers';
 
 const ListDetail: React.FC = () => {
-  const { getActiveList, addItem, updateList, reorderItems } = useListContext();
   const { viewMode, theme } = useTheme();
-  const activeList = getActiveList();
+  const { 
+    state,
+    getActiveList, 
+    reorderItems, 
+    addItem, 
+    updateList, 
+    toggleItem, 
+    deleteItem, 
+    updateItem, 
+    toggleViewMode 
+  } = useListContext();
+  const activeList = getActiveList()!;
   const [newItem, setNewItem] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(activeList?.title || '');
@@ -160,11 +171,43 @@ const ListDetail: React.FC = () => {
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
-    if (over && active.id !== over.id) {
-      const oldIndex = activeList.items.findIndex(item => item.id === active.id);
-      const newIndex = activeList.items.findIndex(item => item.id === over.id);
-      const newItems = arrayMove(activeList.items, oldIndex, newIndex);
-      reorderItems(activeList.id, newItems);
+    
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    try {
+      // Criar uma cópia dos itens para manipulação
+      const items = [...activeList.items];
+      
+      // Encontrar os índices
+      const oldIndex = items.findIndex(item => item.id === active.id);
+      const newIndex = items.findIndex(item => item.id === over.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        // Usar arrayMove para reordenar
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        
+        // Atualizar o estado
+        reorderItems(activeList.id, newItems);
+        
+        // Forçar atualização do localStorage para garantir persistência
+        const updatedList = {
+          ...activeList,
+          items: newItems
+        };
+        
+        const updatedLists = state.lists.map(list => 
+          list.id === activeList.id ? updatedList : list
+        );
+        
+        localStorage.setItem('listApp', JSON.stringify({
+          ...state,
+          lists: updatedLists
+        }));
+      }
+    } catch (error) {
+      console.error("Erro ao reordenar itens:", error);
     }
   };
 
@@ -404,8 +447,8 @@ const ListDetail: React.FC = () => {
         </div>
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} onDragStart={onDragStart}>
-          <SortableContext items={filteredAndSortedItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
-            {filteredAndSortedItems.length === 0 ? (
+          <SortableContext items={activeList.items.map(item => item.id)} strategy={verticalListSortingStrategy}>
+            {activeList.items.length === 0 ? (
               <div
                 className={clsx(
                   'p-8 text-center',
@@ -416,19 +459,37 @@ const ListDetail: React.FC = () => {
               </div>
             ) : viewMode === 'cover' ? (
               <div className="grid grid-cols-3 gap-4 p-4">
-                {filteredAndSortedItems.map((item) => (
-                  <ListItem key={item.id} item={item} listId={activeList.id} viewMode={viewMode} activeId={activeId} listColor={activeList.color} />
+                {activeList.items.map((item) => (
+                  <div key={item.id}>
+                    <ListItem
+                      key={item.id}
+                      item={item}
+                      listId={activeList.id}
+                      viewMode={viewMode}
+                      activeId={activeId}
+                      listColor={activeList.color}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
               <div className="divide-y">
-                {filteredAndSortedItems.map((item) => (
-                  <ListItem key={item.id} item={item} listId={activeList.id} viewMode={viewMode} activeId={activeId} listColor={activeList.color} />
+                {activeList.items.map((item) => (
+                  <div key={item.id}>
+                    <ListItem
+                      key={item.id}
+                      item={item}
+                      listId={activeList.id}
+                      viewMode={viewMode}
+                      activeId={activeId}
+                      listColor={activeList.color}
+                    />
+                  </div>
                 ))}
               </div>
             )}
           </SortableContext>
-          <DragOverlay>
+          <DragOverlay modifiers={[snapCenterToCursor]}>
             {activeId ? (
               viewMode === 'cover' ? (
                 <div className={clsx(

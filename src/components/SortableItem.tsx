@@ -3,7 +3,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Star, Star as StarFill, Pin, Pin as PinFill, Trash2 } from 'lucide-react';
+import { Star, Star as StarFill, Pin, Pin as PinFill, Trash2, GripVertical } from 'lucide-react';
 import clsx from 'clsx';
 import { ListType } from '../types';
 
@@ -38,28 +38,55 @@ const SortableItem: React.FC<Props> = ({
     setNodeRef,
     transform,
     transition,
-  } = useSortable({ id });
+    isDragging,
+  } = useSortable({ 
+    id,
+    disabled: list.pinned 
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  const handleItemClick = (e: React.MouseEvent) => {
+    // Verificar se o clique não veio de um botão ou handle
+    if (
+      (e.target as HTMLElement).tagName !== 'BUTTON' &&
+      !(e.target as HTMLElement).closest('button') &&
+      !(e.target as HTMLElement).closest('[data-drag-handle="true"]')
+    ) {
+      setActiveList(list.id);
+    }
   };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
+      onClick={handleItemClick}
       className={clsx(
-        'group flex items-center justify-between p-3 rounded-md shadow-sm cursor-pointer transition-colors',
+        'group flex items-center justify-between p-3 rounded-md shadow-sm transition-colors',
         activeListId === list.id
           ? theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-green-100 text-green-800'
           : theme === 'dark' ? 'hover:bg-gray-800 text-white' : 'hover:bg-gray-100 text-gray-900'
       )}
     >
-      <div onClick={() => setActiveList(list.id)} className="flex-1 truncate">
-        {list.name}
+      {!list.pinned && (
+        <div 
+          {...attributes} 
+          {...listeners}
+          data-drag-handle="true"
+          className="mr-2 cursor-grab hover:text-green-500"
+        >
+          <GripVertical className="w-4 h-4" />
+        </div>
+      )}
+      
+      <div className="flex-1 truncate">
+        {list.title}
       </div>
 
       <div className="flex items-center gap-2">
