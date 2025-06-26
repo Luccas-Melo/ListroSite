@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import { Checkbox } from './ui/Checkbox';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { motion } from 'framer-motion';
 
 interface ListItemProps {
   item: ListItemType;
@@ -16,9 +17,10 @@ interface ListItemProps {
   level?: number;
   parentItemId?: string;
   listColor?: string;
+  animationDelay?: number;
 }
 
-const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, activeId, level = 0, parentItemId, listColor }) => {
+const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, activeId, level = 0, parentItemId, listColor, animationDelay = 0 }) => {
   const { theme } = useTheme();
   const { toggleItem, deleteItem, updateItem, addItem, togglePriorityItem } = useListContext();
   const [isEditing, setIsEditing] = useState(false);
@@ -118,36 +120,40 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
   }, [newSubitemContent, addItem, listId, item.id]);
 
   return (
-      <div
-        ref={setNodeRef}
-        {...attributes}
-        {...listeners}
-        className={clsx(
-          'group transition-all duration-200',
-          viewMode === 'list' ? [
-            'flex items-center p-3 rounded-lg',
-            theme === 'dark' ? [
-              'border border-gray-700 bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
-              item.completed ? 'bg-gray-900/50' : ''
-            ] : [
-              'border border-gray-200 bg-white/80 hover:bg-gray-50 backdrop-blur-md bg-opacity-80',
-              item.completed ? 'bg-gray-50' : ''
-            ]
+    <motion.div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      initial={viewMode === 'cover' ? { opacity: 0, y: 80 } : { opacity: 0, x: -80 }}
+      animate={viewMode === 'cover' ? { opacity: 1, y: 0 } : { opacity: 1, x: 0 }}
+      exit={viewMode === 'cover' ? { opacity: 0, y: 80 } : { opacity: 0, x: -80 }}
+      transition={{ duration: 0.16, ease: 'easeOut', delay: animationDelay }}
+      className={clsx(
+        'group transition-all duration-200',
+        viewMode === 'list' ? [
+          'flex items-center p-3 rounded-lg',
+          theme === 'dark' ? [
+            'border border-gray-700 bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
+            item.completed ? 'bg-gray-900/50' : ''
           ] : [
-            'group relative rounded-lg overflow-hidden',
-            theme === 'dark' ? [
-              'bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
-              'border border-gray-800/50'
-            ] : [
-              'bg-white hover:bg-gray-50 backdrop-blur-md bg-opacity-80',
-              'border border-gray-200'
-            ]
-          ],
-          { 'pl-10': level > 0 },
-          { [`pl-${level * 10}`]: level > 0 }
-        )}
-        style={{ ...style, paddingLeft: `${level * 2.5}rem`, backgroundColor: item.listColor || undefined }}
-      >
+            'border border-gray-200 bg-white/80 hover:bg-gray-50 backdrop-blur-md bg-opacity-80',
+            item.completed ? 'bg-gray-50' : ''
+          ]
+        ] : [
+          'group relative rounded-lg overflow-hidden',
+          theme === 'dark' ? [
+            'bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
+            'border border-gray-800/50'
+          ] : [
+            'bg-white hover:bg-gray-50 backdrop-blur-md bg-opacity-80',
+            'border border-gray-200'
+          ]
+        ],
+        { 'pl-10': level > 0 },
+        { [`pl-${level * 10}`]: level > 0 }
+      )}
+      style={{ ...style, paddingLeft: `${level * 2.5}rem`, backgroundColor: item.listColor || undefined }}
+    >
       {viewMode === 'list' || isEditing ? (
         <>
           <div className="mr-3 ml-1">
@@ -449,7 +455,7 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
         </div>
       )}
 
-    </div>
+    </motion.div>
   );
 };
 

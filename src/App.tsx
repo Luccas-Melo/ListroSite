@@ -1,9 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ListProvider } from './context/ListContext';
 import { ThemeProvider } from './context/ThemeContext';
 import MainLayout from './components/MainLayout';
+import SkeletonLoader from './components/ui/SkeletonLoader';
 
-function App() {
+const App = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simula carregamento inicial
+    const timer = setTimeout(() => setLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <SkeletonLoader />;
+  }
+
   return (
     <ThemeProvider>
       <ListProvider>
@@ -11,6 +24,6 @@ function App() {
       </ListProvider>
     </ThemeProvider>
   );
-}
+};
 
 export default App;

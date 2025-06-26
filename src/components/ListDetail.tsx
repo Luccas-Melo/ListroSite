@@ -22,6 +22,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
+import { AnimatePresence } from 'framer-motion';
 
 const ListDetail: React.FC = () => {
   const { viewMode, theme } = useTheme();
@@ -210,6 +211,8 @@ const ListDetail: React.FC = () => {
       console.error("Erro ao reordenar itens:", error);
     }
   };
+
+  const isStaggered = activeList.items.length <= 20;
 
   return (
     <div className="flex-grow p-0 max-w-[670px] mx-auto">
@@ -448,46 +451,50 @@ const ListDetail: React.FC = () => {
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} onDragStart={onDragStart}>
           <SortableContext items={activeList.items.map(item => item.id)} strategy={verticalListSortingStrategy}>
-            {activeList.items.length === 0 ? (
-              <div
-                className={clsx(
-                  'p-8 text-center',
-                  theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                )}
-              >
-                Nenhum item ainda. Adicione seu primeiro item acima!
-              </div>
-            ) : viewMode === 'cover' ? (
-              <div className="grid grid-cols-3 gap-4 p-4">
-                {activeList.items.map((item) => (
-                  <div key={item.id}>
-                    <ListItem
-                      key={item.id}
-                      item={item}
-                      listId={activeList.id}
-                      viewMode={viewMode}
-                      activeId={activeId}
-                      listColor={activeList.color}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="divide-y">
-                {activeList.items.map((item) => (
-                  <div key={item.id}>
-                    <ListItem
-                      key={item.id}
-                      item={item}
-                      listId={activeList.id}
-                      viewMode={viewMode}
-                      activeId={activeId}
-                      listColor={activeList.color}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            <AnimatePresence>
+              {activeList.items.length === 0 ? (
+                <div
+                  className={clsx(
+                    'p-8 text-center',
+                    theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                  )}
+                >
+                  Nenhum item ainda. Adicione seu primeiro item acima!
+                </div>
+              ) : viewMode === 'cover' ? (
+                <div className="grid grid-cols-3 gap-4 p-4">
+                  {activeList.items.map((item, idx) => (
+                    <div key={item.id}>
+                      <ListItem
+                        key={item.id}
+                        item={item}
+                        listId={activeList.id}
+                        viewMode={viewMode}
+                        activeId={activeId}
+                        listColor={activeList.color}
+                        animationDelay={isStaggered ? idx * 0.04 : 0}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {activeList.items.map((item, idx) => (
+                    <div key={item.id}>
+                      <ListItem
+                        key={item.id}
+                        item={item}
+                        listId={activeList.id}
+                        viewMode={viewMode}
+                        activeId={activeId}
+                        listColor={activeList.color}
+                        animationDelay={isStaggered ? idx * 0.04 : 0}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </AnimatePresence>
           </SortableContext>
           <DragOverlay modifiers={[snapCenterToCursor]}>
             {activeId ? (

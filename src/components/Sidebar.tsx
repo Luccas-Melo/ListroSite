@@ -3,6 +3,7 @@ import { Film, Tv, MapPin, PenTool, Book, Plus, Trash2, Gamepad, Globe, Music, C
 import { useListContext } from '../context/ListContext';
 import { useTheme } from '../context/ThemeContext';
 import clsx from 'clsx';
+import { motion } from 'framer-motion';
 
 import {
   DndContext,
@@ -89,7 +90,7 @@ const SortableItem: React.FC<{
   const isStarAnimating = starAnimatingId === list.id;
   const isPinAnimating = pinAnimatingId === list.id;
 
-  const getIcon = useCallback((iconName?: string, type?: string) => {
+  const getIcon = React.useCallback((iconName?: string, type?: string) => {
     const iconToUse = iconName || type;
     switch (iconToUse) {
       case 'Film': case 'movies': return <Film size={18} />;
@@ -109,14 +110,21 @@ const SortableItem: React.FC<{
   }, []);
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      whileHover={{ scale: 1.03, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 25, duration: 0.3 }}
       className={clsx(
-        'relative flex flex-col p-4 pr-4 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md select-none overflow-hidden z-20',
+        'relative flex flex-col p-4 pr-4 rounded-xl select-none overflow-hidden z-20',
         isDragging && '-translate-x-1/2',
+        isDragging && 'opacity-80 shadow-2xl',
         list.id === activeListId
           ? theme === 'dark'
             ? 'bg-brandGreen-600 text-white shadow-lg shadow-brandGreen-600/40 hover:bg-brandGreen-600'
@@ -227,7 +235,7 @@ const SortableItem: React.FC<{
           style={{ width: `${progress}%` }}
         />
       </div>
-    </div>
+    </motion.div>
   );
 });
 
