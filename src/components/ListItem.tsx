@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { X, Edit2, Trash2, Image as ImageIcon, Check, Plus, Star, Star as StarIcon } from 'lucide-react';
+import { X, Edit2, Trash2, Image as ImageIcon, Check, Plus, Star, Star as StarIcon, Info } from 'lucide-react';
 import { ListItem as ListItemType } from '../types';
 import { useListContext } from '../context/ListContext';
 import { useTheme } from '../context/ThemeContext';
@@ -9,6 +9,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import ReactDOM from 'react-dom';
 
 interface ListItemProps {
   item: ListItemType;
@@ -31,6 +32,8 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
   const [showAddSubitem, setShowAddSubitem] = useState(false);
   const [newSubitemContent, setNewSubitemContent] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showInfoPopover, setShowInfoPopover] = useState(false);
+  const [infoPopoverPos, setInfoPopoverPos] = useState<{top: number, left: number}>();
 
   const {
     attributes,
@@ -182,18 +185,69 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
             <div className="mr-3 ml-1">
               <Checkbox checked={item.completed} onCheckedChange={handleToggle} color={listColor} />
             </div>
-            <span
-              className={clsx(
-                'flex-grow',
-                item.completed ? [
-                  'line-through',
-                  theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                ] : [
-                  theme === 'dark' ? 'text-gray-100' : 'text-gray-800'
-                ]
-              )}
-            >
+            <span className={clsx(
+              'flex-grow flex items-center gap-2',
+              item.completed ? [
+                'line-through',
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              ] : [
+                theme === 'dark' ? 'text-gray-100' : 'text-gray-800'
+              ]
+            )}>
               {item.content}
+              <span
+                className="relative inline-block"
+                onMouseEnter={e => {
+                  if (window.innerWidth > 768) {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setInfoPopoverPos({
+                      top: rect.bottom + 8,
+                      left: rect.left + rect.width / 2
+                    });
+                    setShowInfoPopover(true);
+                  }
+                }}
+                onMouseLeave={() => { if (window.innerWidth > 768) setShowInfoPopover(false); }}
+                onClick={e => {
+                  if (window.innerWidth <= 768) {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setInfoPopoverPos({
+                      top: rect.bottom + 8,
+                      left: rect.left + rect.width / 2
+                    });
+                    setShowInfoPopover(v => !v);
+                  }
+                  e.stopPropagation();
+                }}
+                tabIndex={0}
+                aria-label="Ver detalhes do item"
+                style={{ cursor: 'pointer' }}
+              >
+                <Info size={16} className="text-gray-400 hover:text-brandGreen-500 transition" />
+                {showInfoPopover && infoPopoverPos && ReactDOM.createPortal(
+                  <div
+                    className={clsx(
+                      'fixed z-[9999] min-w-[180px] rounded-lg p-3 text-sm shadow-lg',
+                      window.innerWidth > 768
+                        ? (theme === 'dark' ? 'bg-gray-800 text-gray-100 border border-gray-700' : 'bg-white text-gray-900 border border-gray-200')
+                        : (theme === 'dark' ? 'bg-gray-900 text-gray-100 border border-gray-700' : 'bg-white text-gray-900 border border-gray-300')
+                    )}
+                    style={{
+                      top: infoPopoverPos.top,
+                      left: infoPopoverPos.left,
+                      transform: 'translate(-50%, 0)'
+                    }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div><b>Detalhes:</b></div>
+                    <div>Criado em: 10/07/2024</div>
+                    {window.innerWidth <= 768 && (
+                      <button className="mt-2 px-3 py-1 rounded bg-brandGreen-500 text-white text-xs" onClick={() => setShowInfoPopover(false)}>Fechar</button>
+                    )}
+                  </div>,
+                  document.body
+                )}
+              </span>
             </span>
             {isEditing ? (
               <div className="flex items-center space-x-2 flex-grow">

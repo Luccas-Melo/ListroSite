@@ -16,7 +16,11 @@ const App = () => {
   }, []);
 
   if (loading) {
-    return <SkeletonLoader />;
+    return (
+      <ThemeProvider>
+        <SkeletonLoader />
+      </ThemeProvider>
+    );
   }
 
   return (

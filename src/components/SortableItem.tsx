@@ -68,10 +68,13 @@ const SortableItem: React.FC<Props> = ({
       style={style}
       onClick={handleItemClick}
       className={clsx(
-        'group flex items-center justify-between p-3 rounded-md shadow-sm transition-colors',
+        'group flex items-center justify-between p-3 rounded-md transition-colors',
+        theme === 'dark'
+          ? 'shadow-md bg-gray-800/80 text-white'
+          : 'shadow-lg bg-white text-gray-900',
         activeListId === list.id
-          ? theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-green-100 text-green-800'
-          : theme === 'dark' ? 'hover:bg-gray-800 text-white' : 'hover:bg-gray-100 text-gray-900'
+          ? theme === 'dark' ? 'ring-2 ring-brandGreen-500' : 'ring-2 ring-brandGreen-500'
+          : ''
       )}
     >
       {!list.pinned && (
