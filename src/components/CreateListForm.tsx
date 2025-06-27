@@ -5,6 +5,7 @@ import { Film, Tv, MapPin, PenTool, Book, X } from 'lucide-react';
 import clsx from 'clsx';
 import { ListType } from '../types';
 import ModalTemplateSelector from './ModalTemplateSelector';
+import { toast } from 'sonner';
 
 const CreateListForm: React.FC = () => {
   const { addList, addListFromTemplate } = useListContext();
@@ -28,20 +29,25 @@ const CreateListForm: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (title.trim()) {
-      (addList as unknown as (title: string, type: string, icon?: string, avatar?: string, tags?: string[], color?: string) => void)(
-        title.trim(),
-        selectedType,
-        selectedType === 'custom' ? selectedIcon : undefined,
-        avatar.trim() || undefined,
-        tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
-        selectedColor
-      );
-      setTitle('');
-      setSelectedType('custom');
-      setSelectedIcon('X');
-      setAvatar('');
-      setTags('');
-      setSelectedColor('#84cc16');
+      try {
+        (addList as unknown as (title: string, type: string, icon?: string, avatar?: string, tags?: string[], color?: string) => void)(
+          title.trim(),
+          selectedType,
+          selectedType === 'custom' ? selectedIcon : undefined,
+          avatar.trim() || undefined,
+          tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
+          selectedColor
+        );
+        toast.success('Lista criada com sucesso!');
+        setTitle('');
+        setSelectedType('custom');
+        setSelectedIcon('X');
+        setAvatar('');
+        setTags('');
+        setSelectedColor('#84cc16');
+      } catch (error) {
+        toast.error('Erro ao criar lista.');
+      }
     }
   };
 

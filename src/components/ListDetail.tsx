@@ -23,6 +23,7 @@ import {
 } from '@dnd-kit/sortable';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import { AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 const ListDetail: React.FC = () => {
   const { viewMode, theme } = useTheme();
@@ -138,15 +139,25 @@ const ListDetail: React.FC = () => {
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (newItem.trim()) {
-      addItem(activeList.id, newItem.trim());
-      setNewItem('');
+      try {
+        addItem(activeList.id, newItem.trim());
+        toast.success('Item adicionado com sucesso!');
+        setNewItem('');
+      } catch (error) {
+        toast.error('Erro ao adicionar item.');
+      }
     }
   };
 
   const handleSave = () => {
     if (editTitle.trim()) {
-      updateList(activeList.id, editTitle.trim(), editIcon, undefined, undefined, undefined, undefined, editColor);
-      setIsEditing(false);
+      try {
+        updateList(activeList.id, editTitle.trim(), editIcon, undefined, undefined, undefined, undefined, editColor);
+        toast.success('Lista editada com sucesso!');
+        setIsEditing(false);
+      } catch (error) {
+        toast.error('Erro ao editar a lista.');
+      }
     }
   };
 
@@ -218,8 +229,8 @@ const ListDetail: React.FC = () => {
     <div className="flex-grow p-0 max-w-[670px] mx-auto">
       <div
         className={clsx(
-          'rounded-xl shadow-sm overflow-hidden',
-          theme === 'dark' ? 'bg-gray-800' : 'bg-white shadow-md transition-shadow duration-300'
+          'rounded-xl overflow-hidden',
+          theme === 'dark' ? 'bg-gray-800 shadow-md' : 'bg-white shadow-lg'
         )}
       >
         <div

@@ -3,9 +3,11 @@ import { ListProvider } from './context/ListContext';
 import { ThemeProvider } from './context/ThemeContext';
 import MainLayout from './components/MainLayout';
 import SkeletonLoader from './components/ui/SkeletonLoader';
+import { toast } from 'sonner';
 
 const App = () => {
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     // Simula carregamento inicial
@@ -21,6 +23,7 @@ const App = () => {
     <ThemeProvider>
       <ListProvider>
         <MainLayout />
+       
       </ListProvider>
     </ThemeProvider>
   );

@@ -3,7 +3,8 @@ import { Film, Tv, MapPin, PenTool, Book, Plus, Trash2, Gamepad, Globe, Music, C
 import { useListContext } from '../context/ListContext';
 import { useTheme } from '../context/ThemeContext';
 import clsx from 'clsx';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 import {
   DndContext,
@@ -26,7 +27,7 @@ import {
 } from '@dnd-kit/sortable';
 
 import { CSS } from '@dnd-kit/utilities';
-import { centerToCursor, offset, snapCenterToCursor } from '@dnd-kit/modifiers';
+import { snapCenterToCursor } from '@dnd-kit/modifiers';
 
 const SortableItem: React.FC<{
   id: string;
@@ -39,6 +40,7 @@ const SortableItem: React.FC<{
   togglePinned: (id: string) => void;
   setActiveList: (id: string) => void;
   deleteList: (id: string) => void;
+  setConfirmDeleteId: (id: string) => void;
   isDragging?: boolean;
 }> = React.memo(({
   id,
@@ -51,6 +53,7 @@ const SortableItem: React.FC<{
   togglePinned,
   setActiveList,
   deleteList,
+  setConfirmDeleteId,
   isDragging,
 }) => {
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
@@ -128,10 +131,10 @@ const SortableItem: React.FC<{
         list.id === activeListId
           ? theme === 'dark'
             ? 'bg-brandGreen-600 text-white shadow-lg shadow-brandGreen-600/40 hover:bg-brandGreen-600'
-            : 'bg-brandGreen-600 text-white hover:bg-brandGreen-700'
+            : 'bg-brandGreen-600 text-white shadow-lg hover:bg-brandGreen-700'
           : theme === 'dark'
             ? 'text-gray-300 border border-gray-700 bg-gray-800/30 hover:bg-gray-800/40 hover:border-gray-600'
-            : 'text-gray-700 border border-gray-200 bg-gray-50 shadow-sm hover:shadow-md hover:bg-gray-100 hover:border-gray-300'
+            : 'text-gray-700 bg-white shadow-md hover:shadow-lg'
       )}
       tabIndex={0}
       role="button"
@@ -201,9 +204,7 @@ const SortableItem: React.FC<{
           <button
             onClick={(e) => {
               e.stopPropagation();
-              if (confirm('Tem certeza que deseja excluir esta lista?')) {
-                deleteList(list.id);
-              }
+              setConfirmDeleteId(list.id);
             }}
             className="p-1 text-gray-400 hover:text-red-500 rounded pointer-events-auto"
             aria-label="Excluir lista"
@@ -251,6 +252,8 @@ const Sidebar: React.FC = () => {
   // New state for filter and sort
   const [filterText, setFilterText] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const toggleFavorite = useCallback((id: string) => {
     setStarAnimatingId(id);
@@ -349,6 +352,16 @@ const Sidebar: React.FC = () => {
     localStorage.setItem('listApp', JSON.stringify({ ...state, lists: newLists }));
   }, [lists, dispatch, state]);
 
+  const handleDeleteList = (id: string) => {
+    try {
+      deleteList(id);
+      toast.success('Lista excluída com sucesso!');
+    } catch (e) {
+      toast.error('Erro ao excluir a lista.');
+    }
+    setConfirmDeleteId(null);
+  };
+
   return (
     <DndContext 
       sensors={sensors} 
@@ -439,6 +452,7 @@ const Sidebar: React.FC = () => {
               togglePinned={togglePinned}
               setActiveList={setActiveList}
               deleteList={deleteList}
+              setConfirmDeleteId={setConfirmDeleteId}
               isDragging={activeId === list.id}
             />
           ))}
@@ -460,6 +474,7 @@ const Sidebar: React.FC = () => {
                 togglePinned={togglePinned}
                 setActiveList={setActiveList}
                 deleteList={deleteList}
+                setConfirmDeleteId={setConfirmDeleteId}
                 isDragging={activeId === list.id}
               />
             ))}
@@ -492,6 +507,7 @@ const Sidebar: React.FC = () => {
               togglePinned={togglePinned}
               setActiveList={setActiveList}
               deleteList={deleteList}
+              setConfirmDeleteId={setConfirmDeleteId}
               isDragging={true}
             />
           ) : null}
@@ -510,6 +526,42 @@ const Sidebar: React.FC = () => {
           <span>Nova Lista</span>
         </button>
       </div>
+      <AnimatePresence>
+        {confirmDeleteId && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.22, ease: 'easeInOut' }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ duration: 0.22, ease: 'easeInOut' }}
+              className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-6 min-w-[320px] max-w-full flex flex-col gap-6 border border-gray-200 dark:border-gray-700"
+            >
+              <h3 className="text-lg font-semibold dark:text-gray-100 text-gray-900 mb-2">Excluir lista</h3>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">Tem certeza que deseja excluir esta lista?</p>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => handleDeleteList(confirmDeleteId)}
+                  className="px-4 py-2 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition"
+                >
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </DndContext>
   );
 };

@@ -7,7 +7,8 @@ import clsx from 'clsx';
 import { Checkbox } from './ui/Checkbox';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface ListItemProps {
   item: ListItemType;
@@ -29,6 +30,7 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const [showAddSubitem, setShowAddSubitem] = useState(false);
   const [newSubitemContent, setNewSubitemContent] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const {
     attributes,
@@ -65,8 +67,18 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
   }, [toggleItem, listId, item.id, parentItemId]);
 
   const handleDelete = useCallback(() => {
-    deleteItem(listId, item.id, parentItemId);
-  }, [deleteItem, listId, item.id, parentItemId]);
+    setConfirmDelete(true);
+  }, []);
+
+  const confirmDeleteItem = () => {
+    try {
+      deleteItem(listId, item.id, parentItemId);
+      toast.success('Item excluído com sucesso!');
+    } catch (e) {
+      toast.error('Erro ao excluir o item.');
+    }
+    setConfirmDelete(false);
+  };
 
   const handleEdit = useCallback(() => {
     setIsEditing(true);
@@ -79,7 +91,12 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
 
   const handleSave = useCallback(() => {
     if (editContent.trim()) {
-      updateItem(listId, item.id, editContent, previewImage || undefined, parentItemId);
+      try {
+        updateItem(listId, item.id, editContent, previewImage || undefined, parentItemId);
+        toast.success('Item editado com sucesso!');
+      } catch (error) {
+        toast.error('Erro ao editar o item.');
+      }
     }
     setIsEditing(false);
   }, [editContent, updateItem, listId, item.id, previewImage, parentItemId]);
@@ -113,349 +130,392 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
 
   const handleAddSubitem = useCallback(() => {
     if (newSubitemContent.trim()) {
-      addItem(listId, newSubitemContent, undefined, item.id);
+      try {
+        addItem(listId, newSubitemContent, undefined, item.id);
+        toast.success('Subitem adicionado com sucesso!');
+      } catch (error) {
+        toast.error('Erro ao adicionar subitem.');
+      }
       setNewSubitemContent('');
       setShowAddSubitem(false);
     }
   }, [newSubitemContent, addItem, listId, item.id]);
 
   return (
-    <motion.div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      initial={viewMode === 'cover' ? { opacity: 0, y: 80 } : { opacity: 0, x: -80 }}
-      animate={viewMode === 'cover' ? { opacity: 1, y: 0 } : { opacity: 1, x: 0 }}
-      exit={viewMode === 'cover' ? { opacity: 0, y: 80 } : { opacity: 0, x: -80 }}
-      transition={{ duration: 0.16, ease: 'easeOut', delay: animationDelay }}
-      className={clsx(
-        'group transition-all duration-200',
-        viewMode === 'list' ? [
-          'flex items-center p-3 rounded-lg',
-          theme === 'dark' ? [
-            'border border-gray-700 bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
-            item.completed ? 'bg-gray-900/50' : ''
+    <>
+      <motion.div
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
+        initial={viewMode === 'cover' ? { opacity: 0, y: 80 } : { opacity: 0, x: -80 }}
+        animate={viewMode === 'cover' ? { opacity: 1, y: 0 } : { opacity: 1, x: 0 }}
+        exit={viewMode === 'cover' ? { opacity: 0, y: 80 } : { opacity: 0, x: -80 }}
+        transition={{ duration: 0.16, ease: 'easeOut', delay: animationDelay }}
+        className={clsx(
+          'group transition-all duration-200',
+          viewMode === 'list' ? [
+            'flex items-center p-3 rounded-lg',
+            theme === 'dark' ? [
+              'border border-gray-700 bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
+              item.completed ? 'bg-gray-900/50' : ''
+            ] : [
+              'bg-white shadow-md hover:shadow-lg',
+              item.completed ? 'bg-gray-50' : ''
+            ]
           ] : [
-            'border border-gray-200 bg-white/80 hover:bg-gray-50 backdrop-blur-md bg-opacity-80',
-            item.completed ? 'bg-gray-50' : ''
-          ]
-        ] : [
-          'group relative rounded-lg overflow-hidden',
-          theme === 'dark' ? [
-            'bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
-            'border border-gray-800/50'
-          ] : [
-            'bg-white hover:bg-gray-50 backdrop-blur-md bg-opacity-80',
-            'border border-gray-200'
-          ]
-        ],
-        { 'pl-10': level > 0 },
-        { [`pl-${level * 10}`]: level > 0 }
-      )}
-      style={{ ...style, paddingLeft: `${level * 2.5}rem`, backgroundColor: item.listColor || undefined }}
-    >
-      {viewMode === 'list' || isEditing ? (
-        <>
-          <div className="mr-3 ml-1">
-            <Checkbox checked={item.completed} onCheckedChange={handleToggle} color={listColor} />
-          </div>
-          <span
-            className={clsx(
-              'flex-grow',
-              item.completed ? [
-                'line-through',
-                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              ] : [
-                theme === 'dark' ? 'text-gray-100' : 'text-gray-800'
-              ]
-            )}
-          >
-            {item.content}
-          </span>
-          {isEditing ? (
-            <div className="flex items-center space-x-2 flex-grow">
-              <input
-                ref={inputRef as React.RefObject<HTMLInputElement>}
-                type="text"
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className={clsx(
-                  'flex-grow p-1 border-b-2 focus:outline-none bg-transparent rounded backdrop-blur-md bg-opacity-80',
-                  theme === 'dark' ? 'border-primary-500 text-white placeholder-gray-500' : 'border-primary-500 text-gray-900 placeholder-gray-400'
-                )}
-                autoFocus
-              />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSave();
-                }}
-                className={clsx(
-                  'p-1 text-green-600 hover:text-green-800',
-                  theme === 'dark' ? 'text-green-400 hover:text-green-600' : 'text-green-600 hover:text-green-800'
-                )}
-                aria-label="Salvar alteração"
-              >
-                <Check size={18} />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCancel();
-                }}
-                className={clsx(
-                  'p-1 text-red-600 hover:text-red-800',
-                  theme === 'dark' ? 'text-red-400 hover:text-red-600' : 'text-red-600 hover:text-red-800'
-                )}
-                aria-label="Descartar alteração"
-              >
-                <X size={18} />
-              </button>
+            'group relative rounded-lg overflow-hidden',
+            theme === 'dark' ? [
+              'bg-gray-900/30 hover:bg-gray-900/50 backdrop-blur-md bg-opacity-80',
+              'border border-gray-800/50'
+            ] : [
+              'bg-white shadow-md hover:shadow-lg',
+              'border border-gray-200'
+            ]
+          ],
+          { 'pl-10': level > 0 },
+          { [`pl-${level * 10}`]: level > 0 }
+        )}
+        style={{ ...style, paddingLeft: `${level * 2.5}rem`, backgroundColor: item.listColor || undefined }}
+      >
+        {viewMode === 'list' || isEditing ? (
+          <>
+            <div className="mr-3 ml-1">
+              <Checkbox checked={item.completed} onCheckedChange={handleToggle} color={listColor} />
             </div>
-          ) : (
-            <div className="ml-2 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              {level === 0 && (
+            <span
+              className={clsx(
+                'flex-grow',
+                item.completed ? [
+                  'line-through',
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                ] : [
+                  theme === 'dark' ? 'text-gray-100' : 'text-gray-800'
+                ]
+              )}
+            >
+              {item.content}
+            </span>
+            {isEditing ? (
+              <div className="flex items-center space-x-2 flex-grow">
+                <input
+                  ref={inputRef as React.RefObject<HTMLInputElement>}
+                  type="text"
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className={clsx(
+                    'flex-grow p-1 border-b-2 focus:outline-none bg-transparent rounded backdrop-blur-md bg-opacity-80',
+                    theme === 'dark' ? 'border-primary-500 text-white placeholder-gray-500' : 'border-primary-500 text-gray-900 placeholder-gray-400'
+                  )}
+                  autoFocus
+                />
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleEdit();
+                    handleSave();
                   }}
                   className={clsx(
-                    'p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700',
-                    theme === 'dark' ? 'text-gray-400 hover:text-primary-400' : 'text-gray-600 hover:text-primary-600'
+                    'p-1 text-green-600 hover:text-green-800',
+                    theme === 'dark' ? 'text-green-400 hover:text-green-600' : 'text-green-600 hover:text-green-800'
+                  )}
+                  aria-label="Salvar alteração"
+                >
+                  <Check size={18} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCancel();
+                  }}
+                  className={clsx(
+                    'p-1 text-red-600 hover:text-red-800',
+                    theme === 'dark' ? 'text-red-400 hover:text-red-600' : 'text-red-600 hover:text-red-800'
+                  )}
+                  aria-label="Descartar alteração"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            ) : (
+              <div className="ml-2 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                {level === 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit();
+                    }}
+                    className={clsx(
+                      'p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700',
+                      theme === 'dark' ? 'text-gray-400 hover:text-primary-400' : 'text-gray-600 hover:text-primary-600'
+                    )}
+                    aria-label="Editar item"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }}
+                  className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-red-500"
+                  aria-label="Excluir item"
+                >
+                  <Trash2 size={16} />
+                </button>
+                {level === 0 && (
+                  <button
+                    onClick={() => setShowAddSubitem(true)}
+                    className={clsx(
+                      'text-primary-500 hover:text-primary-700 flex items-center justify-center w-6 h-6 rounded-full'
+                    )}
+                    aria-label="Adicionar subitem"
+                  >
+                    <Plus size={16} />
+                  </button>
+                )}
+                {level === 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePriorityItem(listId, item.id);
+                    }}
+                    className={clsx(
+                      'p-1 rounded-md transition-colors',
+                      item.priority ? 'text-yellow-400 hover:text-yellow-500' : 'text-gray-400 hover:text-yellow-400'
+                    )}
+                    aria-label={item.priority ? 'Remover prioridade' : 'Marcar como prioridade'}
+                  >
+                    <StarIcon size={16} fill={item.priority ? 'currentColor' : 'none'} />
+                  </button>
+                )}
+              </div>
+            )}
+            {showAddSubitem && (
+              <div className="ml-2 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={newSubitemContent}
+                  onChange={(e) => setNewSubitemContent(e.target.value)}
+                  placeholder="Novo subitem"
+                  className={clsx(
+                    'p-1 border-b-2 focus:outline-none bg-transparent rounded backdrop-blur-md bg-opacity-80',
+                    theme === 'dark' ? 'border-primary-500 text-white placeholder-gray-500' : 'border-primary-500 text-gray-900 placeholder-gray-400'
+                  )}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddSubitem();
+                    } else if (e.key === 'Escape') {
+                      setShowAddSubitem(false);
+                      setNewSubitemContent('');
+                    }
+                  }}
+                />
+                <button
+                  onClick={handleAddSubitem}
+                  className="p-1 text-primary-500 hover:text-primary-700"
+                  aria-label="Confirmar adição"
+                >
+                  <Check size={18} />
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddSubitem(false);
+                    setNewSubitemContent('');
+                  }}
+                  className="p-1 text-gray-400 hover:text-gray-600"
+                  aria-label="Cancelar adição"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className={clsx(
+            "relative w-[200px] h-[300px]",
+            item.completed ? "" : ""
+          )}>
+            {previewImage && level === 0 ? (
+              <>
+                <img
+                  src={previewImage}
+                  alt={item.content}
+                  className={clsx(
+                    "w-full h-full object-cover",
+                    item.completed && "opacity-50"
+                  )}
+                />
+                {isEditing ? (
+                  <div
+                    className="absolute inset-0 flex flex-col justify-center items-center bg-black bg-opacity-50 backdrop-blur-md rounded-xl p-6 max-w-[95%] mx-auto shadow-lg sm:max-w-md sm:p-8 transition-opacity duration-500"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby={`edit-item-${item.id}`}
+                    tabIndex={-1}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.stopPropagation();
+                        handleCancel();
+                      }
+                    }}
+                  >
+                    <input
+                      id={`edit-item-${item.id}`}
+                      ref={inputRef as React.RefObject<HTMLInputElement>}
+                      type="text"
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSave();
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault();
+                          handleCancel();
+                        }
+                      }}
+                      className={clsx(
+                        'w-full p-2 rounded text-white placeholder-gray-400 text-xl font-semibold focus:outline-none bg-black bg-opacity-40 border-b-4 border-primary-600',
+                        theme === 'dark' ? 'border-primary-600' : 'border-primary-600'
+                      )}
+                      autoFocus
+                    />
+                    <div className="mt-4 w-full text-gray-400 text-sm italic truncate">
+                      {item.content}
+                    </div>
+                    <div className="mt-6 w-full flex justify-end space-x-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSave();
+                        }}
+                        className="p-2 text-green-600 hover:text-green-900 rounded-lg border-2 border-green-600 hover:border-green-900 transition flex items-center shadow-md"
+                        aria-label="Salvar alteração"
+                        type="button"
+                      >
+                        Salvar
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCancel();
+                        }}
+                        className="p-2 text-red-600 hover:text-red-900 rounded-lg border-2 border-red-600 hover:border-red-900 transition flex items-center shadow-md"
+                        aria-label="Descartar alteração"
+                        type="button"
+                      >
+                        Descartar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className={clsx(
+                      "absolute bottom-0 left-0 w-full bg-black bg-opacity-60 text-white text-sm p-1 truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-b-lg"
+                    )}>
+                      {item.content}
+                    </div>
+                    
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-900">
+                <ImageIcon size={16} className="text-gray-400" />
+              </div>
+            )}
+            <div className="absolute top-2 left-2">
+              <Checkbox checked={item.completed} onCheckedChange={handleToggle} color={listColor && listColor !== '#84cc16' ? listColor : undefined} />
+            </div>
+            {level === 0 && (
+              <div className="absolute bottom-2 right-2">
+                <label className="cursor-pointer p-1 text-gray-300 hover:text-primary-400 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <ImageIcon size={16} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            )}
+            {level === 0 && (
+              <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <button
+                  onClick={handleEdit}
+                  className={clsx(
+                    'p-1',
+                    theme === 'dark' ? 'text-gray-400 hover:text-primary-400' : 'text-gray-400 hover:text-primary-600'
                   )}
                   aria-label="Editar item"
                 >
                   <Edit2 size={16} />
                 </button>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete();
-                }}
-                className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-red-500"
-                aria-label="Excluir item"
-              >
-                <Trash2 size={16} />
-              </button>
-              {level === 0 && (
                 <button
-                  onClick={() => setShowAddSubitem(true)}
-                  className={clsx(
-                    'text-primary-500 hover:text-primary-700 flex items-center justify-center w-6 h-6 rounded-full'
-                  )}
-                  aria-label="Adicionar subitem"
+                  onClick={handleDelete}
+                  className="p-1 text-gray-400 hover:text-red-500"
+                  aria-label="Excluir item"
                 >
-                  <Plus size={16} />
+                  <Trash2 size={16} />
                 </button>
-              )}
-              {level === 0 && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     togglePriorityItem(listId, item.id);
                   }}
                   className={clsx(
-                    'p-1 rounded-md transition-colors',
+                    'p-1 transition-colors',
                     item.priority ? 'text-yellow-400 hover:text-yellow-500' : 'text-gray-400 hover:text-yellow-400'
                   )}
                   aria-label={item.priority ? 'Remover prioridade' : 'Marcar como prioridade'}
                 >
                   <StarIcon size={16} fill={item.priority ? 'currentColor' : 'none'} />
                 </button>
-              )}
-            </div>
-          )}
-          {showAddSubitem && (
-            <div className="ml-2 flex items-center gap-2">
-              <input
-                type="text"
-                value={newSubitemContent}
-                onChange={(e) => setNewSubitemContent(e.target.value)}
-                placeholder="Novo subitem"
-                className={clsx(
-                  'p-1 border-b-2 focus:outline-none bg-transparent rounded backdrop-blur-md bg-opacity-80',
-                  theme === 'dark' ? 'border-primary-500 text-white placeholder-gray-500' : 'border-primary-500 text-gray-900 placeholder-gray-400'
-                )}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleAddSubitem();
-                  } else if (e.key === 'Escape') {
-                    setShowAddSubitem(false);
-                    setNewSubitemContent('');
-                  }
-                }}
-              />
-              <button
-                onClick={handleAddSubitem}
-                className="p-1 text-primary-500 hover:text-primary-700"
-                aria-label="Confirmar adição"
-              >
-                <Check size={18} />
-              </button>
-              <button
-                onClick={() => {
-                  setShowAddSubitem(false);
-                  setNewSubitemContent('');
-                }}
-                className="p-1 text-gray-400 hover:text-gray-600"
-                aria-label="Cancelar adição"
-              >
-                <X size={18} />
-              </button>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className={clsx(
-          "relative w-[200px] h-[300px]",
-          item.completed ? "" : ""
-        )}>
-          {previewImage && level === 0 ? (
-            <>
-              <img
-                src={previewImage}
-                alt={item.content}
-                className={clsx(
-                  "w-full h-full object-cover",
-                  item.completed && "opacity-50"
-                )}
-              />
-              {isEditing ? (
-                <div
-                  className="absolute inset-0 flex flex-col justify-center items-center bg-black bg-opacity-50 backdrop-blur-md rounded-xl p-6 max-w-[95%] mx-auto shadow-lg sm:max-w-md sm:p-8 transition-opacity duration-500"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby={`edit-item-${item.id}`}
-                  tabIndex={-1}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') {
-                      e.stopPropagation();
-                      handleCancel();
-                    }
-                  }}
-                >
-                  <input
-                    id={`edit-item-${item.id}`}
-                    ref={inputRef as React.RefObject<HTMLInputElement>}
-                    type="text"
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleSave();
-                      } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        handleCancel();
-                      }
-                    }}
-                    className={clsx(
-                      'w-full p-2 rounded text-white placeholder-gray-400 text-xl font-semibold focus:outline-none bg-black bg-opacity-40 border-b-4 border-primary-600',
-                      theme === 'dark' ? 'border-primary-600' : 'border-primary-600'
-                    )}
-                    autoFocus
-                  />
-                  <div className="mt-4 w-full text-gray-400 text-sm italic truncate">
-                    {item.content}
-                  </div>
-                  <div className="mt-6 w-full flex justify-end space-x-4">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSave();
-                      }}
-                      className="p-2 text-green-600 hover:text-green-900 rounded-lg border-2 border-green-600 hover:border-green-900 transition flex items-center shadow-md"
-                      aria-label="Salvar alteração"
-                      type="button"
-                    >
-                      Salvar
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCancel();
-                      }}
-                      className="p-2 text-red-600 hover:text-red-900 rounded-lg border-2 border-red-600 hover:border-red-900 transition flex items-center shadow-md"
-                      aria-label="Descartar alteração"
-                      type="button"
-                    >
-                      Descartar
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className={clsx(
-                    "absolute bottom-0 left-0 w-full bg-black bg-opacity-60 text-white text-sm p-1 truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-b-lg"
-                  )}>
-                    {item.content}
-                  </div>
-                  
-                </>
-              )}
-            </>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-900">
-              <ImageIcon size={16} className="text-gray-400" />
-            </div>
-          )}
-          <div className="absolute top-2 left-2">
-            <Checkbox checked={item.completed} onCheckedChange={handleToggle} color={listColor && listColor !== '#84cc16' ? listColor : undefined} />
+              </div>
+            )}
           </div>
-          {level === 0 && (
-            <div className="absolute bottom-2 right-2">
-              <label className="cursor-pointer p-1 text-gray-300 hover:text-primary-400 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <ImageIcon size={16} />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-            </div>
-          )}
-          {level === 0 && (
-            <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <button
-                onClick={handleEdit}
-                className={clsx(
-                  'p-1',
-                  theme === 'dark' ? 'text-gray-400 hover:text-primary-400' : 'text-gray-400 hover:text-primary-600'
-                )}
-                aria-label="Editar item"
-              >
-                <Edit2 size={16} />
-              </button>
-              <button
-                onClick={handleDelete}
-                className="p-1 text-gray-400 hover:text-red-500"
-                aria-label="Excluir item"
-              >
-                <Trash2 size={16} />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  togglePriorityItem(listId, item.id);
-                }}
-                className={clsx(
-                  'p-1 transition-colors',
-                  item.priority ? 'text-yellow-400 hover:text-yellow-500' : 'text-gray-400 hover:text-yellow-400'
-                )}
-                aria-label={item.priority ? 'Remover prioridade' : 'Marcar como prioridade'}
-              >
-                <StarIcon size={16} fill={item.priority ? 'currentColor' : 'none'} />
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+        )}
 
-    </motion.div>
+      </motion.div>
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.22, ease: 'easeInOut' }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ duration: 0.22, ease: 'easeInOut' }}
+              className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-6 min-w-[320px] max-w-full flex flex-col gap-6 border border-gray-200 dark:border-gray-700"
+            >
+              <h3 className="text-lg font-semibold dark:text-gray-100 text-gray-900 mb-2">Excluir item</h3>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">Tem certeza que deseja excluir este item?</p>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeleteItem}
+                  className="px-4 py-2 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition"
+                >
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
