@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import clsx from 'clsx';
 
 interface FilterModalProps {
@@ -20,6 +20,8 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   setShowCompleted,
   filterColor,
 }) => {
+  const [selectedNullButton, setSelectedNullButton] = useState<'nenhum' | 'todos' | null>(null);
+
   if (!isOpen) return null;
 
   return (
@@ -103,17 +105,38 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setShowCompleted(null)}
+                onClick={() => { setShowCompleted(null); setSelectedNullButton('nenhum'); }}
                 className={clsx(
                   'px-3 py-1.5 rounded-lg border text-sm font-medium transition',
-                  showCompleted === null
+                  showCompleted === null && selectedNullButton === 'nenhum'
                     ? filterColor && filterColor !== '#84cc16'
                       ? 'filter-btn-active-custom' : 'bg-brandGreen-500 text-white border-brandGreen-500 shadow'
                     : 'bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100',
                   'dark:text-gray-100 dark:hover:bg-gray-800 dark:border-gray-600',
-                  showCompleted === null && filterColor && filterColor !== '#84cc16' && 'filter-btn-active-custom'
+                  showCompleted === null && selectedNullButton === 'nenhum' && filterColor && filterColor !== '#84cc16' && 'filter-btn-active-custom'
                 )}
-                style={showCompleted === null && filterColor && filterColor !== '#84cc16' ? {
+                style={showCompleted === null && selectedNullButton === 'nenhum' && filterColor && filterColor !== '#84cc16' ? {
+                  background: filterColor,
+                  border: 'none',
+                  color: '#fff',
+                  filter: 'brightness(0.95)',
+                } : {}}
+              >
+                Nenhum
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowCompleted(null); setSelectedNullButton('todos'); }}
+                className={clsx(
+                  'px-3 py-1.5 rounded-lg border text-sm font-medium transition',
+                  showCompleted === null && selectedNullButton === 'todos'
+                    ? filterColor && filterColor !== '#84cc16'
+                      ? 'filter-btn-active-custom' : 'bg-brandGreen-500 text-white border-brandGreen-500 shadow'
+                    : 'bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100',
+                  'dark:text-gray-100 dark:hover:bg-gray-800 dark:border-gray-600',
+                  showCompleted === null && selectedNullButton === 'todos' && filterColor && filterColor !== '#84cc16' && 'filter-btn-active-custom'
+                )}
+                style={showCompleted === null && selectedNullButton === 'todos' && filterColor && filterColor !== '#84cc16' ? {
                   background: filterColor,
                   border: 'none',
                   color: '#fff',
@@ -124,7 +147,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setShowCompleted(false)}
+                onClick={() => { setShowCompleted(false); setSelectedNullButton(null); }}
                 className={clsx(
                   'px-3 py-1.5 rounded-lg border text-sm font-medium transition',
                   showCompleted === false
@@ -145,7 +168,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setShowCompleted(true)}
+                onClick={() => { setShowCompleted(true); setSelectedNullButton(null); }}
                 className={clsx(
                   'px-3 py-1.5 rounded-lg border text-sm font-medium transition',
                   showCompleted === true

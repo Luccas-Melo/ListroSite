@@ -463,7 +463,7 @@ const ListDetail: React.FC = () => {
                 </div>
               ) : viewMode === 'cover' ? (
                 <div className="grid grid-cols-3 gap-4 p-4">
-                  {activeList.items.map((item, idx) => (
+                  {filteredAndSortedItems.map((item, idx) => (
                     <div key={item.id}>
                       <ListItem
                         key={item.id}
@@ -479,7 +479,7 @@ const ListDetail: React.FC = () => {
                 </div>
               ) : (
                 <div className="divide-y">
-                  {activeList.items.map((item, idx) => (
+                  {filteredAndSortedItems.map((item, idx) => (
                     <div key={item.id}>
                       <ListItem
                         key={item.id}
