@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 import {
   DndContext,
-  closestCenter,
+  rectIntersection,
   PointerSensor,
   useSensor,
   useSensors,
@@ -18,6 +18,8 @@ import {
   defaultDropAnimationSideEffects,
   MeasuringStrategy,
 } from '@dnd-kit/core';
+
+import { useDroppable } from '@dnd-kit/core';
 
 import {
   arrayMove,
@@ -67,14 +69,23 @@ const SortableItem: React.FC<{
     isDragging: isDraggingSort
   } = useSortable({ 
     id,
-    disabled: list.pinned,
+    disabled: list.pinned || !activeListId,
   });
+
+  const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id, disabled: list.pinned });
+
+  const combinedRef = (node: HTMLElement | null) => {
+    setNodeRef(node);
+    setDroppableRef(node);
+  };
 
   const style = useMemo(() => ({
     transform: CSS.Transform.toString(transform),
     transition: isDraggingSort ? undefined : 'transform 200ms cubic-bezier(0.25, 1, 0.5, 1)',
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isOver ? 0.4 : isDragging ? 0.5 : 1,
     cursor: list.pinned ? 'default' : 'grab',
+    border: isOver ? `2px dashed ${theme === 'dark' ? '#4ade80' : '#86efac'}` : undefined,
+    backgroundColor: isOver ? (theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)') : undefined,
     boxShadow: isDragging 
       ? '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' 
       : 'none',
@@ -114,7 +125,7 @@ const SortableItem: React.FC<{
 
   return (
     <motion.div
-      ref={setNodeRef}
+      ref={combinedRef}
       style={style}
       {...attributes}
       {...listeners}
@@ -146,7 +157,7 @@ const SortableItem: React.FC<{
       }}
     >
       <div className="flex items-center gap-3 overflow-hidden pointer-events-auto min-w-0">
-        {!list.pinned && (
+        {!list.pinned && activeListId && (
           <div
             className="mr-3 cursor-grab select-none z-30 pointer-events-auto flex-shrink-0"
             aria-label="Arrastar lista"
@@ -251,7 +262,7 @@ const Sidebar: React.FC = () => {
 
   // New state for filter and sort
   const [filterText, setFilterText] = useState('');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>('asc');
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -272,32 +283,28 @@ const Sidebar: React.FC = () => {
     return lists.filter(list => list.title.toLowerCase().includes(filterText.toLowerCase()));
   }, [lists, filterText]);
 
-  // Ordenação visual, usada apenas para exibição quando não está arrastando
-  const visuallySortedLists = useMemo(() => {
-    if (activeId) return filteredLists; // Se estiver arrastando, não ordena
-    const pinnedLists = filteredLists.filter(list => list.pinned);
-    const nonPinnedLists = filteredLists.filter(list => !list.pinned);
-    const sortFunc = (a: typeof lists[0], b: typeof lists[0]) => {
-      if (sortOrder === 'asc') {
-        return a.title.localeCompare(b.title);
-      } else {
-        return b.title.localeCompare(a.title);
-      }
+  // Separar listas fixadas e não fixadas, e aplicar ordenação
+  const { pinnedLists, nonPinnedLists } = useMemo(() => {
+    // Primeiro filtra as listas
+    const pinned = filteredLists.filter(list => list.pinned);
+    const nonPinned = filteredLists.filter(list => !list.pinned);
+
+    // Função de ordenação
+    const compare = (a: typeof lists[0], b: typeof lists[0]) => {
+  if (!sortOrder) return 0;
+      const titleA = a.title.toLowerCase();
+      const titleB = b.title.toLowerCase();
+      return sortOrder === 'asc'
+        ? titleA.localeCompare(titleB)
+        : titleB.localeCompare(titleA);
     };
-    pinnedLists.sort(sortFunc);
-    nonPinnedLists.sort(sortFunc);
-    return [...pinnedLists, ...nonPinnedLists];
-  }, [filteredLists, sortOrder, activeId]);
 
-  const pinnedLists = useMemo(() => {
-    if (activeId) return filteredLists.filter(list => list.pinned);
-    return visuallySortedLists.filter(list => list.pinned);
-  }, [filteredLists, visuallySortedLists, activeId]);
-
-  const nonPinnedLists = useMemo(() => {
-    if (activeId) return filteredLists.filter(list => !list.pinned);
-    return visuallySortedLists.filter(list => !list.pinned);
-  }, [filteredLists, visuallySortedLists, activeId]);
+    // Ordena cada grupo separadamente
+    return {
+      pinnedLists: [...pinned].sort(compare),
+      nonPinnedLists: [...nonPinned].sort(compare)
+    };
+  }, [filteredLists, sortOrder]);
 
   // Configuração mais simples para o sensor
   const sensors = useSensors(
@@ -350,6 +357,8 @@ const Sidebar: React.FC = () => {
     
     // Forçar atualização do localStorage
     localStorage.setItem('listApp', JSON.stringify({ ...state, lists: newLists }));
+      // Após reordenar manualmente, desativamos a ordenação alfabética
+    setSortOrder(null);
   }, [lists, dispatch, state]);
 
   const handleDeleteList = (id: string) => {
@@ -365,7 +374,7 @@ const Sidebar: React.FC = () => {
   return (
     <DndContext 
       sensors={sensors} 
-      collisionDetection={closestCenter} 
+      collisionDetection={rectIntersection} 
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       measuring={{
@@ -439,7 +448,7 @@ const Sidebar: React.FC = () => {
 
         {/* Render pinned lists first */}
         <div className="space-y-3">
-          {lists.filter(list => list.pinned).map((list) => (
+          {pinnedLists.map((list) => (
             <SortableItem
               key={list.id}
               id={list.id}
@@ -459,9 +468,9 @@ const Sidebar: React.FC = () => {
         </div>
 
         {/* Render non-pinned lists in a sortable context */}
-        <SortableContext items={lists.filter(list => !list.pinned).map(list => list.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={nonPinnedLists.map(list => list.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-3 mt-3">
-            {lists.filter(list => !list.pinned).map((list) => (
+            {nonPinnedLists.map((list) => (
               <SortableItem
                 key={list.id}
                 id={list.id}

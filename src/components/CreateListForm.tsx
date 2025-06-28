@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useListContext } from '../context/ListContext';
 import { useTheme } from '../context/ThemeContext';
-import { Film, Tv, MapPin, PenTool, Book, X } from 'lucide-react';
+import { Film, Tv, MapPin, PenTool, Book, X, Info } from 'lucide-react';
 import clsx from 'clsx';
 import { ListType } from '../types';
 import ModalTemplateSelector from './ModalTemplateSelector';
@@ -17,6 +17,7 @@ const CreateListForm: React.FC = () => {
   const [tags, setTags] = useState<string>('');
   const [selectedColor, setSelectedColor] = React.useState<string>('#84cc16'); // cor padrão verde
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [isTemporary, setIsTemporary] = useState(false);
 
   const openTemplateModal = () => setIsTemplateModalOpen(true);
   const closeTemplateModal = () => setIsTemplateModalOpen(false);
@@ -30,13 +31,14 @@ const CreateListForm: React.FC = () => {
     e.preventDefault();
     if (title.trim()) {
       try {
-        (addList as unknown as (title: string, type: string, icon?: string, avatar?: string, tags?: string[], color?: string) => void)(
+        (addList as unknown as (title: string, type: string, icon?: string, avatar?: string, tags?: string[], color?: string, isTemporary?: boolean) => void)(
           title.trim(),
           selectedType,
           selectedType === 'custom' ? selectedIcon : undefined,
           avatar.trim() || undefined,
           tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
-          selectedColor
+          selectedColor,
+          isTemporary
         );
         toast.success('Lista criada com sucesso!');
         setTitle('');
@@ -45,6 +47,7 @@ const CreateListForm: React.FC = () => {
         setAvatar('');
         setTags('');
         setSelectedColor('#84cc16');
+        setIsTemporary(false);
       } catch (error) {
         toast.error('Erro ao criar lista.');
       }
@@ -154,6 +157,25 @@ const CreateListForm: React.FC = () => {
               className="w-16 h-8 rounded border border-gray-300 cursor-pointer"
               title="Selecionar cor da lista"
             />
+          </div>
+
+          <div className="mb-6 flex items-center gap-2">
+            <input
+              id="temporary"
+              type="checkbox"
+              checked={isTemporary}
+              onChange={(e) => setIsTemporary(e.target.checked)}
+              className="w-4 h-4 text-brandGreen-600 bg-gray-100 border-gray-300 rounded focus:ring-brandGreen-500 dark:focus:ring-brandGreen-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            />
+            <label htmlFor="temporary" className={clsx('text-sm font-medium flex items-center gap-1', theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
+              Lista temporária
+              <span className="relative group">
+                <Info size={14} className="cursor-pointer text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300" />
+                <span className="absolute z-10 hidden group-hover:block w-56 p-2 text-xs leading-tight text-white bg-gray-800 rounded shadow-lg -left-1/2 top-6">
+                  Não será salva no navegador. Desaparece ao fechar ou recarregar a página.
+                </span>
+              </span>
+            </label>
           </div>
 
           {selectedType === 'custom' && (

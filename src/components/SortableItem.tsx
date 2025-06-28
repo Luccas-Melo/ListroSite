@@ -71,7 +71,7 @@ const SortableItem: React.FC<Props> = ({
         'group flex items-center justify-between p-3 rounded-md transition-colors',
         theme === 'dark'
           ? 'shadow-md bg-gray-800/80 text-white'
-          : 'shadow-lg bg-white text-gray-900',
+          : 'shadow-lg bg-white text-gray-900 border border-gray-300',
         activeListId === list.id
           ? theme === 'dark' ? 'ring-2 ring-brandGreen-500' : 'ring-2 ring-brandGreen-500'
           : ''

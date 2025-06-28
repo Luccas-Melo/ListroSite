@@ -10,6 +10,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   const { state, setActiveList } = useListContext();
+  const { activeListId } = state;
   const { theme, toggleTheme, viewMode, setViewMode } = useTheme();
 
   return (
@@ -35,33 +36,37 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               <img src="/logo-sem-fundo.png" alt="Logo" className="h-10 w-auto object-contain" />
             )}
           </div>
-
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 border dark:border-gray-700 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('list')}
-              className={clsx(
-                'p-1.5 rounded transition-colors',
-                viewMode === 'list' ? 'bg-brandGreen-100 dark:bg-brandGreen-900 text-brandGreen-600 dark:text-brandGreen-400' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-              )}
-              aria-label="Visualização em lista"
-            >
-              <List size={18} />
-            </button>
-            <button
-              onClick={() => setViewMode('cover')}
-              className={clsx(
-                'p-1.5 rounded transition-colors',
-                viewMode === 'cover' ? 'bg-brandGreen-100 dark:bg-brandGreen-900 text-brandGreen-600 dark:text-brandGreen-400' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-              )}
-              aria-label="Visualização em grade"
-            >
-              <Grid size={18} />
-            </button>
-          </div>
-
+          {activeListId && (
+            <div className="flex items-center gap-2 border dark:border-gray-700 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('list')}
+                className={clsx(
+                  'p-1.5 rounded transition-colors',
+                  viewMode === 'list'
+                    ? 'bg-brandGreen-100 dark:bg-brandGreen-900 text-brandGreen-600 dark:text-brandGreen-400'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                )}
+                aria-label="Visualização em lista"
+              >
+                <List size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode('cover')}
+                className={clsx(
+                  'p-1.5 rounded transition-colors',
+                  viewMode === 'cover'
+                    ? 'bg-brandGreen-100 dark:bg-brandGreen-900 text-brandGreen-600 dark:text-brandGreen-400'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                )}
+                aria-label="Visualização em grade"
+              >
+                <Grid size={18} />
+              </button>
+            </div>
+          )}
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-200' : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'}`}

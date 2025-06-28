@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import clsx from 'clsx';
 import { Checkbox } from './ui/Checkbox';
 import { useSortable } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -44,12 +45,28 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
     isDragging,
   } = useSortable({ id: item.id });
 
-  const style = useMemo(() => ({
+  const { isOver, setNodeRef: setDroppableNodeRef } = useDroppable({ id: item.id });
+
+  const combinedRef = (node: HTMLElement | null) => {
+    setNodeRef(node);
+    setDroppableNodeRef(node as any);
+  };
+
+  const style = useMemo(() => {
+    const baseTransition = transition || '';
+    const combinedTransition = baseTransition
+      ? `${baseTransition}, background-color 150ms ease, border-color 150ms ease, opacity 150ms ease`
+      : 'background-color 150ms ease, border-color 150ms ease, opacity 150ms ease';
+    return {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: combinedTransition,
     zIndex: isDragging ? 999 : undefined,
-    opacity: activeId === item.id ? 0.5 : isDragging ? 0.5 : 1,
-  }), [transform, transition, isDragging, activeId, item.id]);
+    opacity: isOver ? 0.4 : activeId === item.id ? 0.3 : isDragging ? 0.3 : 1,
+    border: isOver ? `2px dashed ${listColor || '#84cc16'}` : undefined,
+    backgroundColor: isOver ? (theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)') : undefined,
+
+  };
+  }, [transform, transition, isDragging, isOver, activeId, item.id, theme, listColor]);
 
   useEffect(() => {
     if (level === 0) {
@@ -147,7 +164,7 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
   return (
     <>
       <motion.div
-        ref={setNodeRef}
+        ref={combinedRef}
         {...attributes}
         {...listeners}
         initial={viewMode === 'cover' ? { opacity: 0, y: 80 } : { opacity: 0, x: -80 }}
@@ -175,14 +192,13 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
               'border border-gray-200'
             ]
           ],
-          { 'pl-10': level > 0 },
-          { [`pl-${level * 10}`]: level > 0 }
+
         )}
-        style={{ ...style, paddingLeft: `${level * 2.5}rem`, backgroundColor: item.listColor || undefined }}
+        style={{ ...style, backgroundColor: item.listColor || undefined }}
       >
         {viewMode === 'list' || isEditing ? (
           <>
-            <div className="mr-3 ml-1">
+            <div className="mr-2">
               <Checkbox checked={item.completed} onCheckedChange={handleToggle} color={listColor} />
             </div>
             <span className={clsx(
@@ -569,6 +585,22 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
           </motion.div>
         )}
       </AnimatePresence>
+      {viewMode === 'list' && item.children && item.children.length > 0 && (
+        <div className="ml-4 space-y-1">
+          {item.children.map((child) => (
+            <ListItem
+              key={child.id}
+              item={child}
+              listId={listId}
+              viewMode={viewMode}
+              activeId={activeId}
+              level={level + 1}
+              parentItemId={item.id}
+              listColor={listColor}
+            />
+          ))}
+        </div>
+      )}
     </>
   );
 };

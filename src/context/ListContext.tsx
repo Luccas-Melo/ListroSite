@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { List, AppState, Tag, ListItem } from '../types';
 
 type Action =
-  | { type: 'ADD_LIST'; payload: { id?: string; title: string; type: string; icon?: string; avatar?: string; tags?: Tag[]; viewMode?: 'list' | 'cover'; color?: string } }
+  | { type: 'ADD_LIST'; payload: { id?: string; title: string; type: string; icon?: string; avatar?: string; tags?: Tag[]; viewMode?: 'list' | 'cover'; color?: string; temporary?: boolean } }
   | { type: 'DELETE_LIST'; payload: { id: string } }
   | { type: 'SET_ACTIVE_LIST'; payload: { id: string | null } }
   | { type: 'ADD_ITEM'; payload: { listId: string; content: string; coverImage?: string; parentItemId?: string } }
@@ -21,7 +21,7 @@ type Action =
 interface ListContextType {
   state: AppState;
   dispatch: React.Dispatch<Action>;
-  addList: (title: string, type: string, icon?: string, avatar?: string, tags?: Tag[]) => void;
+  addList: (title: string, type: string, icon?: string, avatar?: string, tags?: Tag[], color?: string, temporary?: boolean) => void;
   addListFromTemplate: (template: { title: string; type: string; icon?: string; tags?: string[]; items: any[] }) => void;
   deleteList: (id: string) => void;
   setActiveList: (id: string | null) => void;
@@ -76,6 +76,7 @@ const reducer = (state: AppState, action: Action): AppState => {
         pinned: false,
         tags: action.payload.tags || [],
         color: action.payload.color || '#84cc16', // cor padrão verde
+        temporary: action.payload.temporary || false,
       };
       return {
         ...state,
@@ -356,20 +357,6 @@ const reducer = (state: AppState, action: Action): AppState => {
         }),
       };
     case 'TOGGLE_PRIORITY_ITEM':
-      const updateNestedItems = (items: ListItem[], itemId: string, callback: (item: ListItem) => ListItem): ListItem[] => {
-        return items.map(item => {
-          if (item.id === itemId) {
-            return callback(item);
-          }
-          if (item.children) {
-            return {
-              ...item,
-              children: updateNestedItems(item.children, itemId, callback),
-            };
-          }
-          return item;
-        });
-      };
       return {
         ...state,
         lists: state.lists.map((list) => {
@@ -408,10 +395,15 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [state, dispatch] = useReducer(reducer, loadState());
 
   useEffect(() => {
-    localStorage.setItem('listApp', JSON.stringify(state));
+    // Não persistir listas temporárias
+    const persistentState: AppState = {
+      ...state,
+      lists: state.lists.filter(l => !l.temporary),
+    };
+    localStorage.setItem('listApp', JSON.stringify(persistentState));
   }, [state]);
 
-  const addList = (title: string, type: string, icon?: string, avatar?: string, tags?: Tag[], color?: string) => {
+  const addList = (title: string, type: string, icon?: string, avatar?: string, tags?: Tag[], color?: string, temporary: boolean = false) => {
     // Set default icon based on type if icon not provided
     const defaultIcons: Record<string, string> = {
       movies: 'Film',
@@ -429,7 +421,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     dispatch({
       type: 'ADD_LIST',
-      payload: { title, type, icon: iconToUse, avatar, tags, color },
+      payload: { title, type, icon: iconToUse, avatar, tags, color, temporary },
     });
   };
 

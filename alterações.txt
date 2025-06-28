@@ -2,10 +2,10 @@
 - Itens com prioridade; ✔
 - Cores de listas e todas os componentes da lista; ✔
 - Buscar por filtros na lista; ✔
-- Detalhes em cada item;
+- Detalhes em cada item;✔
 - Ordenação dentro das listas;✔
 - Adicionar toast de confirmação;✔
 - Skeleton loading;✔
 - Link compartilhável, varias pessoas mexer na mesma lista;
 - Modo offline(as listas ficam salvas no local e sincronizadas quando tiver online novamente);
-- Lista temporária;
+- Lista temporária;✔

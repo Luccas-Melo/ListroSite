@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Tag } from '../types';
 import { Film, Tv, MapPin, PenTool, Book, Plus, Gamepad, Globe, Music, Camera, Edit2, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useListContext } from '../context/ListContext';
 import { useTheme } from '../context/ThemeContext';
@@ -41,29 +42,32 @@ const ListDetail: React.FC = () => {
   const activeList = getActiveList()!;
   const [newItem, setNewItem] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [editTags, setEditTags] = useState<Tag[]>(activeList?.tags || []);
+  const [tagInput, setTagInput] = useState('');
   const [editTitle, setEditTitle] = useState(activeList?.title || '');
   const [editIcon, setEditIcon] = useState<string>(activeList?.icon || 'Plus');
   const [editColor, setEditColor] = useState<string>(activeList?.color || '#84cc16');
   const [activeId, setActiveId] = useState<string | number | null>(null);
   // Filtros e ordenação dos itens
-  const [itemSortOrder, setItemSortOrder] = useState<'asc' | 'desc'>('asc');
+  // "null" indica ordem manual (sem ordenação automática)
+  const [itemSortOrder, setItemSortOrder] = useState<'asc' | 'desc' | null>(null);
   const [showCompleted, setShowCompleted] = useState<boolean | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
 
   // Função para filtrar e ordenar os itens da lista
   const filteredAndSortedItems = React.useMemo(() => {
     if (!activeList) return [];
-    let items = activeList.items || [];
+    let items = [...activeList.items];
     if (showCompleted !== null) {
       items = items.filter(item => !!item.completed === showCompleted);
     }
-    items = [...items].sort((a, b) => {
-      if (itemSortOrder === 'asc') {
-        return a.content.localeCompare(b.content);
-      } else {
-        return b.content.localeCompare(a.content);
-      }
-    });
+    if (itemSortOrder) {
+      items = [...items].sort((a, b) =>
+        itemSortOrder === 'asc'
+          ? a.content.localeCompare(b.content)
+          : b.content.localeCompare(a.content)
+      );
+    }
     return items;
   }, [activeList, itemSortOrder, showCompleted]);
 
@@ -152,7 +156,7 @@ const ListDetail: React.FC = () => {
   const handleSave = () => {
     if (editTitle.trim()) {
       try {
-        updateList(activeList.id, editTitle.trim(), editIcon, undefined, undefined, undefined, undefined, editColor);
+        updateList(activeList.id, editTitle.trim(), editIcon, undefined, editTags, undefined, undefined, editColor);
         toast.success('Lista editada com sucesso!');
         setIsEditing(false);
       } catch (error) {
@@ -165,6 +169,8 @@ const ListDetail: React.FC = () => {
     setIsEditing(false);
     setEditTitle(activeList.title);
     setEditIcon(activeList.icon || 'Plus');
+    setEditTags(activeList.tags || []);
+    setTagInput('');
     setEditColor(activeList.color || '#84cc16');
   };
 
@@ -189,37 +195,22 @@ const ListDetail: React.FC = () => {
     }
 
     try {
-      // Criar uma cópia dos itens para manipulação
-      const items = [...activeList.items];
+      // Reordenar usando o array completo para não perder itens filtrados
+      const allItems = [...activeList.items];
       
-      // Encontrar os índices
-      const oldIndex = items.findIndex(item => item.id === active.id);
-      const newIndex = items.findIndex(item => item.id === over.id);
+      // Encontrar os índices nos itens filtrados
+      const oldIndex = allItems.findIndex(item => item.id === active.id);
+      const newIndex = allItems.findIndex(item => item.id === over.id);
       
       if (oldIndex !== -1 && newIndex !== -1) {
-        // Usar arrayMove para reordenar
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        
-        // Atualizar o estado
-        reorderItems(activeList.id, newItems);
-        
-        // Forçar atualização do localStorage para garantir persistência
-        const updatedList = {
-          ...activeList,
-          items: newItems
-        };
-        
-        const updatedLists = state.lists.map(list => 
-          list.id === activeList.id ? updatedList : list
-        );
-        
-        localStorage.setItem('listApp', JSON.stringify({
-          ...state,
-          lists: updatedLists
-        }));
+        const newOrderedItems = arrayMove(allItems, oldIndex, newIndex);
+        reorderItems(activeList.id, newOrderedItems);
+        // Após um drag manual, manter ordem manual
+        setItemSortOrder(null);
       }
     } catch (error) {
       console.error("Erro ao reordenar itens:", error);
+      toast.error('Erro ao reordenar itens. Tente novamente.');
     }
   };
 
@@ -318,6 +309,45 @@ const ListDetail: React.FC = () => {
                     {icon}
                   </button>
                 ))}
+              </div>
+
+              {/* Tags */}
+              <label className={clsx('block mt-4 mb-1', theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>Tags</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {editTags.map(tag => (
+                  <span key={tag.id} className="flex items-center gap-1 px-2 py-0.5 text-sm bg-gray-300 dark:bg-gray-700 rounded">
+                    {tag.name}
+                    <button type="button" onClick={() => setEditTags(editTags.filter(t => t.id !== tag.id))} className="text-xs ml-1">✕</button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (tagInput.trim()) {
+                        setEditTags([...editTags, { id: Math.random().toString(36).substring(2,9), name: tagInput.trim() }]);
+                        setTagInput('');
+                      }
+                    }
+                  }}
+                  placeholder="Nova tag"
+                  className={clsx('flex-1 border rounded px-2 py-1', theme==='dark' ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300')}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (tagInput.trim()) {
+                      setEditTags([...editTags, { id: Math.random().toString(36).substring(2,9), name: tagInput.trim() }]);
+                      setTagInput('');
+                    }
+                  }}
+                  className="px-3 py-1 rounded bg-brandGreen-500 text-white text-sm"
+                >Adicionar</button>
               </div>
 
               <label className={clsx('block mt-4 mb-1', theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>

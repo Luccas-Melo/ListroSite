@@ -4,8 +4,8 @@ import clsx from 'clsx';
 interface FilterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  itemSortOrder: 'asc' | 'desc';
-  setItemSortOrder: (v: 'asc' | 'desc') => void;
+  itemSortOrder: 'asc' | 'desc' | null;
+  setItemSortOrder: (v: 'asc' | 'desc' | null) => void;
   showCompleted: boolean | null;
   setShowCompleted: (v: boolean | null) => void;
   filterColor?: string;
@@ -74,6 +74,29 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 17v-6m0 0V7m0 4H8m8 0H8m0 0v6m0-6V7" /></svg>
                 A-Z
+              </button>
+              <button
+                type="button"
+                onClick={() => setItemSortOrder(null)}
+                className={clsx(
+                  'flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-medium transition',
+                  itemSortOrder === null
+                    ? filterColor && filterColor !== '#84cc16'
+                      ? 'filter-btn-active-custom' : 'bg-brandGreen-500 text-white border-brandGreen-500 shadow'
+                    : 'bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100',
+                  'dark:text-gray-100 dark:hover:bg-gray-800 dark:border-gray-600',
+                  itemSortOrder === null && filterColor && filterColor !== '#84cc16' && 'filter-btn-active-custom'
+                )}
+                style={itemSortOrder === null && filterColor && filterColor !== '#84cc16' ? {
+                  background: filterColor,
+                  border: 'none',
+                  color: '#fff',
+                  filter: 'brightness(0.95)',
+                } : {}}
+                aria-label="Ordenar manualmente"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 17v-6m0 0V7m0 4H8m8 0H8m0 0v6m0-6V7" /></svg>
+                Manual
               </button>
               <button
                 type="button"

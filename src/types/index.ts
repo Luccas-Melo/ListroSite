@@ -29,6 +29,7 @@ export interface List {
   pinned?: boolean;
   tags?: Tag[];
   color?: string; // cor personalizada da lista
+  temporary?: boolean; // se true, não persiste no localStorage
 }
 
 export interface AppState {
