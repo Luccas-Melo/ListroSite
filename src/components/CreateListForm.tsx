@@ -170,7 +170,7 @@ const CreateListForm: React.FC = () => {
             <label htmlFor="temporary" className={clsx('text-sm font-medium flex items-center gap-1', theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
               Lista temporária
               <span className="relative group">
-                <Info size={14} className="cursor-pointer text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300" />
+                <Info size={14} className="cursor-pointer text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300" />
                 <span className="absolute z-10 hidden group-hover:block w-56 p-2 text-xs leading-tight text-white bg-gray-800 rounded shadow-lg -left-1/2 top-6">
                   Não será salva no navegador. Desaparece ao fechar ou recarregar a página.
                 </span>

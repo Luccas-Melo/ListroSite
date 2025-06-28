@@ -203,12 +203,18 @@ const ListItemComponent: React.FC<ListItemProps> = ({ item, listId, viewMode, ac
             </div>
             <span className={clsx(
               'flex-grow flex items-center gap-2',
-              item.completed ? [
-                'line-through',
-                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              ] : [
-                theme === 'dark' ? 'text-gray-100' : 'text-gray-800'
-              ]
+              level > 0 && 'pl-6',
+              item.completed
+                ? (
+                    level === 0
+                      ? (theme === 'dark' ? 'text-gray-400 line-through' : 'text-gray-600 line-through')
+                      : (theme === 'dark' ? 'text-gray-500 line-through' : 'text-gray-500 line-through')
+                  )
+                : (
+                    level === 0
+                      ? (theme === 'dark' ? 'text-gray-100' : 'text-gray-900')
+                      : (theme === 'dark' ? 'text-gray-300' : 'text-gray-700')
+                  )
             )}>
               {item.content}
               <span

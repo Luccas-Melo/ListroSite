@@ -145,7 +145,7 @@ const SortableItem: React.FC<{
             : 'bg-brandGreen-600 text-white shadow-lg hover:bg-brandGreen-700'
           : theme === 'dark'
             ? 'text-gray-300 border border-gray-700 bg-gray-800/30 hover:bg-gray-800/40 hover:border-gray-600'
-            : 'text-gray-700 bg-white shadow-md hover:shadow-lg'
+            : 'text-gray-800 bg-white shadow-md hover:shadow-lg'
       )}
       tabIndex={0}
       role="button"
